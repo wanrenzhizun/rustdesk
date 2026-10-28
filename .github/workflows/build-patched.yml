@@ -9,6 +9,11 @@ on:
   pull_request:
     branches: [master]
   workflow_dispatch:
+    inputs:
+      package:
+        description: "Also build a portable Windows package"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -20,6 +25,7 @@ concurrency:
 env:
   RUST_VERSION: "1.75"
   LLVM_VERSION: "15.0.6"
+  FLUTTER_VERSION: "3.24.5"
   VCPKG_COMMIT_ID: "9e593bb18ea69cc5095e012465dcd675a822ed0d"
 
 jobs:
@@ -129,3 +135,96 @@ jobs:
       - name: cargo check
         shell: bash
         run: cargo check --lib --features flutter
+
+  package-windows-portable:
+    name: Portable package (manual)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.package }}
+    needs: [verify-patches, generate-bridge, check-windows]
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Re-checkout with LF endings
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+          git rm -r --cached . -q
+          git reset --hard -q
+
+      - name: Apply every patch in order
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(patches/*.patch)
+          for f in "${files[@]}"; do
+            git apply --3way --whitespace=nowarn "$f"
+          done
+
+      - name: Restore generated bridge files
+        uses: actions/download-artifact@v4
+        with:
+          name: bridge-artifact
+          path: ./
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+
+      - name: Cache cargo registry and target
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: package-patched
+
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: ${{ env.LLVM_VERSION }}
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: C:\\vcpkg
+          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
+
+      - name: Install vcpkg dependencies
+        shell: bash
+        env:
+          VCPKG_DEFAULT_HOST_TRIPLET: x64-windows-static
+        run: |
+          "$VCPKG_ROOT/vcpkg" install \
+            --triplet x64-windows-static \
+            --x-install-root="$VCPKG_ROOT/installed"
+
+      - name: Install flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          architecture: x64
+
+      - name: Build portable
+        shell: bash
+        run: python build.py --portable --flutter --skip-portable-pack --hwcodec
+
+      - name: Collect the bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="build/windows/x64/runner/Release"
+          ls -la "$out" | head -20
+          echo "BUNDLE_DIR=$out" >> "$GITHUB_ENV"
+
+      - name: Upload the bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-windows-x64-portable
+          path: ${{ env.BUNDLE_DIR }}
+          if-no-files-found: error
+          retention-days: 14
