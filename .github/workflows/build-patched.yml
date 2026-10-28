@@ -64,6 +64,17 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Re-checkout with LF endings
+        shell: bash
+        # The patches are generated from the objects, so they carry LF. A CRLF worktree
+        # makes every hunk mismatch, which is what a Windows runner does by default.
+        run: |
+          set -euo pipefail
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+          git rm -r --cached . -q
+          git reset --hard -q
+
       - name: Apply every patch in order
         shell: bash
         run: |
