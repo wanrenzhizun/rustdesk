@@ -1,0 +1,31 @@
+From 34fe32fe143eb7548af24da4f71111b444034f7d Mon Sep 17 00:00:00 2001
+From: huzhaolun <huzhaolun@qq.com>
+Date: Wed, 28 Oct 2026 20:37:16 +0800
+Subject: [PATCH 4/6] feat(discovery): re-apply discovery when discovery-url is
+ saved
+
+A save now triggers one mediator restart so the new endpoint is fetched on the
+next attempt instead of after an unrelated connection failure.
+---
+ src/flutter_ffi.rs | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/flutter_ffi.rs b/src/flutter_ffi.rs
+index bd9bd9657..12d09537a 100644
+--- a/src/flutter_ffi.rs
++++ b/src/flutter_ffi.rs
+@@ -1074,6 +1074,11 @@ pub fn main_set_option(key: String, value: String) {
+     } else {
+         set_option(key, value.clone());
+     }
++    if key.eq(crate::discovery::OPTION_DISCOVERY_URL) {
++        // Reconnect now so the new endpoint is fetched at the next attempt instead of after some
++        // unrelated connection failure.
++        crate::rendezvous_mediator::RendezvousMediator::restart();
++    }
+ }
+ 
+ pub fn main_get_options() -> String {
+-- 
+2.56.0.windows.2
+

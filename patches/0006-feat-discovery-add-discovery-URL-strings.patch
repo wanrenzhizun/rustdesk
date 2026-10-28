@@ -1,0 +1,716 @@
+From a15f1d2cb022720406da310a16beb7b97caee591 Mon Sep 17 00:00:00 2001
+From: huzhaolun <huzhaolun@qq.com>
+Date: Wed, 28 Oct 2026 20:37:18 +0800
+Subject: [PATCH 6/6] feat(discovery): add discovery URL strings
+
+Keys are appended to every language file; en/cn/tw are translated and the rest
+fall back to the English text.
+---
+ src/lang/ar.rs       | 2 ++
+ src/lang/az.rs       | 2 ++
+ src/lang/be.rs       | 2 ++
+ src/lang/bg.rs       | 2 ++
+ src/lang/ca.rs       | 2 ++
+ src/lang/cn.rs       | 2 ++
+ src/lang/cs.rs       | 2 ++
+ src/lang/da.rs       | 2 ++
+ src/lang/de.rs       | 2 ++
+ src/lang/el.rs       | 2 ++
+ src/lang/en.rs       | 2 ++
+ src/lang/eo.rs       | 2 ++
+ src/lang/es.rs       | 2 ++
+ src/lang/et.rs       | 2 ++
+ src/lang/eu.rs       | 2 ++
+ src/lang/fa.rs       | 2 ++
+ src/lang/fi.rs       | 2 ++
+ src/lang/fr.rs       | 2 ++
+ src/lang/ge.rs       | 2 ++
+ src/lang/gl.rs       | 2 ++
+ src/lang/gu.rs       | 2 ++
+ src/lang/he.rs       | 2 ++
+ src/lang/hi.rs       | 2 ++
+ src/lang/hr.rs       | 2 ++
+ src/lang/hu.rs       | 2 ++
+ src/lang/id.rs       | 2 ++
+ src/lang/it.rs       | 2 ++
+ src/lang/ja.rs       | 2 ++
+ src/lang/ko.rs       | 2 ++
+ src/lang/kz.rs       | 2 ++
+ src/lang/lt.rs       | 2 ++
+ src/lang/lv.rs       | 2 ++
+ src/lang/ml.rs       | 2 ++
+ src/lang/nb.rs       | 2 ++
+ src/lang/nl.rs       | 2 ++
+ src/lang/pl.rs       | 2 ++
+ src/lang/pt_BR.rs    | 2 ++
+ src/lang/pt_PT.rs    | 2 ++
+ src/lang/ro.rs       | 2 ++
+ src/lang/ru.rs       | 2 ++
+ src/lang/sc.rs       | 2 ++
+ src/lang/sk.rs       | 2 ++
+ src/lang/sl.rs       | 2 ++
+ src/lang/sq.rs       | 2 ++
+ src/lang/sr.rs       | 2 ++
+ src/lang/sv.rs       | 2 ++
+ src/lang/ta.rs       | 2 ++
+ src/lang/template.rs | 2 ++
+ src/lang/th.rs       | 2 ++
+ src/lang/tr.rs       | 2 ++
+ src/lang/tw.rs       | 2 ++
+ src/lang/uk.rs       | 2 ++
+ src/lang/ur.rs       | 2 ++
+ src/lang/vi.rs       | 2 ++
+ 54 files changed, 108 insertions(+)
+
+diff --git a/src/lang/ar.rs b/src/lang/ar.rs
+index 3c79f5e33..f4e495846 100644
+--- a/src/lang/ar.rs
++++ b/src/lang/ar.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/az.rs b/src/lang/az.rs
+index e63f978bf..f1273281a 100644
+--- a/src/lang/az.rs
++++ b/src/lang/az.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/be.rs b/src/lang/be.rs
+index d2d19e19d..1164a1584 100644
+--- a/src/lang/be.rs
++++ b/src/lang/be.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/bg.rs b/src/lang/bg.rs
+index 68bc7430c..9013a3c75 100644
+--- a/src/lang/bg.rs
++++ b/src/lang/bg.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ca.rs b/src/lang/ca.rs
+index 061ab7b78..28a54a991 100644
+--- a/src/lang/ca.rs
++++ b/src/lang/ca.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/cn.rs b/src/lang/cn.rs
+index b470a7fda..32f61389b 100644
+--- a/src/lang/cn.rs
++++ b/src/lang/cn.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", "请选择 Android → media，用于保存日志。"),
+         ("Choose folder", "选择文件夹"),
+         ("Please select Android → media.", "请选择 Android → media。"),
++        ("Discovery URL", "发现服务地址"),
++        ("discovery_url_tip", "留空则不启用。填写后，服务器地址与密钥将由该地址下发，变化时自动跟随。"),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/cs.rs b/src/lang/cs.rs
+index b520a7ea0..db4fb4605 100644
+--- a/src/lang/cs.rs
++++ b/src/lang/cs.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/da.rs b/src/lang/da.rs
+index d779efff6..348317b33 100644
+--- a/src/lang/da.rs
++++ b/src/lang/da.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/de.rs b/src/lang/de.rs
+index d4a83465b..b47780e68 100644
+--- a/src/lang/de.rs
++++ b/src/lang/de.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/el.rs b/src/lang/el.rs
+index 6dccbda99..d0863d447 100644
+--- a/src/lang/el.rs
++++ b/src/lang/el.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/en.rs b/src/lang/en.rs
+index f3c654f0f..b73840818 100644
+--- a/src/lang/en.rs
++++ b/src/lang/en.rs
+@@ -291,5 +291,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("api_server_connection_tip", "Your custom server uses unencrypted HTTP. Contact your administrator to enable HTTPS."),
+         ("api_server_empty_tip", "With API Server empty, your custom server defaults to HTTP. Contact your administrator to enable HTTPS."),
+         ("android-logs-folder-tip", "Choose Android → media to store log files."),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", "Leave empty to disable. When set, the ID server, relay server, API server and key follow this address automatically."),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/eo.rs b/src/lang/eo.rs
+index 5434d4ac5..99d6d130c 100644
+--- a/src/lang/eo.rs
++++ b/src/lang/eo.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/es.rs b/src/lang/es.rs
+index cdfb0fcee..581834440 100644
+--- a/src/lang/es.rs
++++ b/src/lang/es.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/et.rs b/src/lang/et.rs
+index 88de96b16..815f019db 100644
+--- a/src/lang/et.rs
++++ b/src/lang/et.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/eu.rs b/src/lang/eu.rs
+index 3ab92a123..84ff52b06 100644
+--- a/src/lang/eu.rs
++++ b/src/lang/eu.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/fa.rs b/src/lang/fa.rs
+index a037c2a95..e231784e4 100644
+--- a/src/lang/fa.rs
++++ b/src/lang/fa.rs
+@@ -819,5 +819,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/fi.rs b/src/lang/fi.rs
+index 0cea33773..8a1755d09 100644
+--- a/src/lang/fi.rs
++++ b/src/lang/fi.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/fr.rs b/src/lang/fr.rs
+index 6c7318361..9ab7b7667 100644
+--- a/src/lang/fr.rs
++++ b/src/lang/fr.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ge.rs b/src/lang/ge.rs
+index 582f34b6e..d17322ff6 100644
+--- a/src/lang/ge.rs
++++ b/src/lang/ge.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/gl.rs b/src/lang/gl.rs
+index dbf1134de..7572ec752 100644
+--- a/src/lang/gl.rs
++++ b/src/lang/gl.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/gu.rs b/src/lang/gu.rs
+index f792358a3..2cfa973f4 100644
+--- a/src/lang/gu.rs
++++ b/src/lang/gu.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/he.rs b/src/lang/he.rs
+index 747b3dbed..ab4accb00 100644
+--- a/src/lang/he.rs
++++ b/src/lang/he.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/hi.rs b/src/lang/hi.rs
+index 562732bd2..df767d40e 100644
+--- a/src/lang/hi.rs
++++ b/src/lang/hi.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/hr.rs b/src/lang/hr.rs
+index e5d2994ac..8756053f6 100644
+--- a/src/lang/hr.rs
++++ b/src/lang/hr.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/hu.rs b/src/lang/hu.rs
+index 3e8598ae5..7165e20ef 100644
+--- a/src/lang/hu.rs
++++ b/src/lang/hu.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/id.rs b/src/lang/id.rs
+index 2ff8b5b40..6182d7d7c 100644
+--- a/src/lang/id.rs
++++ b/src/lang/id.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/it.rs b/src/lang/it.rs
+index a29da3d95..742ea4218 100644
+--- a/src/lang/it.rs
++++ b/src/lang/it.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ja.rs b/src/lang/ja.rs
+index a6d02a023..e9153e24a 100644
+--- a/src/lang/ja.rs
++++ b/src/lang/ja.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ko.rs b/src/lang/ko.rs
+index 27d989640..51047aefa 100644
+--- a/src/lang/ko.rs
++++ b/src/lang/ko.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/kz.rs b/src/lang/kz.rs
+index b5cb79eb6..8a25573c5 100644
+--- a/src/lang/kz.rs
++++ b/src/lang/kz.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/lt.rs b/src/lang/lt.rs
+index b1bc19224..4f082b0fa 100644
+--- a/src/lang/lt.rs
++++ b/src/lang/lt.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/lv.rs b/src/lang/lv.rs
+index a6e7e0647..2b0cd21b5 100644
+--- a/src/lang/lv.rs
++++ b/src/lang/lv.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ml.rs b/src/lang/ml.rs
+index b3ad4d0ff..96e960c76 100644
+--- a/src/lang/ml.rs
++++ b/src/lang/ml.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/nb.rs b/src/lang/nb.rs
+index 5f9f096de..3ed1171c8 100644
+--- a/src/lang/nb.rs
++++ b/src/lang/nb.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/nl.rs b/src/lang/nl.rs
+index e7ae1132b..7da0b7b9b 100644
+--- a/src/lang/nl.rs
++++ b/src/lang/nl.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/pl.rs b/src/lang/pl.rs
+index f50007d0f..40d8b6115 100644
+--- a/src/lang/pl.rs
++++ b/src/lang/pl.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/pt_BR.rs b/src/lang/pt_BR.rs
+index c19d15cbf..82d62b22e 100644
+--- a/src/lang/pt_BR.rs
++++ b/src/lang/pt_BR.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/pt_PT.rs b/src/lang/pt_PT.rs
+index a276f4ebb..4d916279f 100644
+--- a/src/lang/pt_PT.rs
++++ b/src/lang/pt_PT.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ro.rs b/src/lang/ro.rs
+index 29c4a048c..8bc934454 100644
+--- a/src/lang/ro.rs
++++ b/src/lang/ro.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ru.rs b/src/lang/ru.rs
+index 07471a135..8f2ca512e 100644
+--- a/src/lang/ru.rs
++++ b/src/lang/ru.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/sc.rs b/src/lang/sc.rs
+index 92054a7a8..c234b4ac6 100644
+--- a/src/lang/sc.rs
++++ b/src/lang/sc.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/sk.rs b/src/lang/sk.rs
+index a396f7402..78aff810a 100644
+--- a/src/lang/sk.rs
++++ b/src/lang/sk.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/sl.rs b/src/lang/sl.rs
+index a925caca6..3d889bfe3 100644
+--- a/src/lang/sl.rs
++++ b/src/lang/sl.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/sq.rs b/src/lang/sq.rs
+index 7537534c5..e46c7329f 100644
+--- a/src/lang/sq.rs
++++ b/src/lang/sq.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/sr.rs b/src/lang/sr.rs
+index 4a7836ded..19c5c58cf 100644
+--- a/src/lang/sr.rs
++++ b/src/lang/sr.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/sv.rs b/src/lang/sv.rs
+index 27570ac7c..5b65a80a7 100644
+--- a/src/lang/sv.rs
++++ b/src/lang/sv.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ta.rs b/src/lang/ta.rs
+index f5223752e..9ae19803f 100644
+--- a/src/lang/ta.rs
++++ b/src/lang/ta.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/template.rs b/src/lang/template.rs
+index 04249f308..e38ce2db4 100644
+--- a/src/lang/template.rs
++++ b/src/lang/template.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/th.rs b/src/lang/th.rs
+index bc71765c6..954a24584 100644
+--- a/src/lang/th.rs
++++ b/src/lang/th.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/tr.rs b/src/lang/tr.rs
+index f6e3a0051..f36555490 100644
+--- a/src/lang/tr.rs
++++ b/src/lang/tr.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/tw.rs b/src/lang/tw.rs
+index e6e998478..6af9956b7 100644
+--- a/src/lang/tw.rs
++++ b/src/lang/tw.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", "請選擇 Android → media，用於儲存日誌。"),
+         ("Choose folder", "選擇資料夾"),
+         ("Please select Android → media.", "請選擇 Android → media。"),
++        ("Discovery URL", "發現服務位址"),
++        ("discovery_url_tip", "留空則不啟用。填寫後，伺服器位址與金鑰將由該位址下發，變化時自動跟隨。"),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/uk.rs b/src/lang/uk.rs
+index 283212806..edfbc3255 100644
+--- a/src/lang/uk.rs
++++ b/src/lang/uk.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ur.rs b/src/lang/ur.rs
+index a1603b525..c4b826589 100644
+--- a/src/lang/ur.rs
++++ b/src/lang/ur.rs
+@@ -821,6 +821,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+ 
+diff --git a/src/lang/vi.rs b/src/lang/vi.rs
+index 1bab155fe..040e97978 100644
+--- a/src/lang/vi.rs
++++ b/src/lang/vi.rs
+@@ -821,5 +821,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("android-logs-folder-tip", ""),
+         ("Choose folder", ""),
+         ("Please select Android → media.", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
+     ].iter().cloned().collect();
+ }
+-- 
+2.56.0.windows.2
+

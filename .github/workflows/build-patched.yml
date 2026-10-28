@@ -1,0 +1,120 @@
+name: Build patched
+
+# master only ever holds upstream + patches/ + .github/.
+# Anything that must prove the patches still apply and still compile runs here.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-patched-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RUST_VERSION: "1.75"
+  LLVM_VERSION: "15.0.6"
+  VCPKG_COMMIT_ID: "9e593bb18ea69cc5095e012465dcd675a822ed0d"
+
+jobs:
+  verify-patches:
+    name: Patches apply cleanly
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply every patch in order
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(patches/*.patch)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::patches/ holds no patch"
+            exit 1
+          fi
+          for f in "${files[@]}"; do
+            echo "::group::$f"
+            if ! git apply --3way --whitespace=nowarn "$f"; then
+              echo "::error::failed to apply $f"
+              exit 1
+            fi
+            echo "::endgroup::"
+          done
+          echo "applied ${#files[@]} patch(es)"
+
+  generate-bridge:
+    name: Bridge
+    uses: ./.github/workflows/bridge.yml
+
+  check-windows:
+    name: cargo check (x86_64-pc-windows-msvc)
+    needs: [verify-patches, generate-bridge]
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Apply every patch in order
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(patches/*.patch)
+          for f in "${files[@]}"; do
+            echo "::group::$f"
+            if ! git apply --3way --whitespace=nowarn "$f"; then
+              echo "::error::failed to apply $f"
+              exit 1
+            fi
+            echo "::endgroup::"
+          done
+
+      - name: Restore generated bridge files
+        uses: actions/download-artifact@v4
+        with:
+          name: bridge-artifact
+          path: ./
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+
+      - name: Cache cargo registry and target
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: check-patched
+
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: ${{ env.LLVM_VERSION }}
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: C:\vcpkg
+          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
+
+      - name: Install vcpkg dependencies
+        shell: bash
+        env:
+          VCPKG_DEFAULT_HOST_TRIPLET: x64-windows-static
+        run: |
+          "$VCPKG_ROOT/vcpkg" install \
+            --triplet x64-windows-static \
+            --x-install-root="$VCPKG_ROOT/installed"
+
+      - name: cargo check
+        shell: bash
+        run: cargo check --lib --features flutter

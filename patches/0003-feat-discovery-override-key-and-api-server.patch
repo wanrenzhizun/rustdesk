@@ -1,0 +1,38 @@
+From 7bd456226bcaa469d3a29544ab3d301939fe6ad3 Mon Sep 17 00:00:00 2001
+From: huzhaolun <huzhaolun@qq.com>
+Date: Wed, 28 Oct 2026 20:37:16 +0800
+Subject: [PATCH 3/6] feat(discovery): override key and api server
+
+Only non-empty announced values win, so a missing or empty field keeps the
+value the user typed and ReactDesk2.toml is never rewritten.
+---
+ src/common.rs | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/common.rs b/src/common.rs
+index 53831cc5f..6f51c489b 100644
+--- a/src/common.rs
++++ b/src/common.rs
+@@ -1277,6 +1277,9 @@ fn get_api_server_(api: String, custom: String) -> String {
+             return lic.api.clone();
+         }
+     }
++    if let Some(api_server) = crate::discovery::api_server() {
++        return api_server;
++    }
+     if !api.is_empty() {
+         return api.to_owned();
+     }
+@@ -2148,6 +2151,9 @@ pub async fn get_key(sync: bool) -> String {
+             return lic.key;
+         }
+     }
++    if let Some(key) = crate::discovery::key() {
++        return key;
++    }
+     #[cfg(target_os = "ios")]
+     let mut key = Config::get_option("key");
+     #[cfg(not(target_os = "ios"))]
+-- 
+2.56.0.windows.2
+
