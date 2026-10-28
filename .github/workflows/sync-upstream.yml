@@ -33,12 +33,19 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Merge upstream master
+        # master carries patches/ and .github/, so it is never a fast-forward of upstream.
+        # A plain merge keeps those commits and only conflicts where upstream touched the same
+        # lines, which the patch build will catch again right after this workflow pushes.
         run: |
           set -euo pipefail
           git remote add upstream https://github.com/rustdesk/rustdesk.git || true
           git fetch --no-tags upstream master
-          if ! git merge --no-edit --ff-only upstream/master; then
-            echo "::error::master cannot fast-forward onto upstream/master; a human has to merge it"
+          if git merge-base --is-ancestor upstream/master HEAD; then
+            echo "already up to date with upstream"
+            exit 0
+          fi
+          if ! git merge --no-edit upstream/master; then
+            echo "::error::master does not merge cleanly with upstream/master; a human has to resolve it"
             git merge --abort || true
             exit 1
           fi
