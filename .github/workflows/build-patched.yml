@@ -213,13 +213,22 @@ jobs:
         shell: bash
         run: python build.py --portable --flutter --skip-portable-pack --hwcodec
 
-      - name: Collect the bundle
+      - name: Locate the built bundle
         shell: bash
+        # build.py prints its paths relative to flutter/, so the real output lives under
+        # flutter/build/windows/x64/runner/Release. Find it instead of hard-coding the prefix.
         run: |
           set -euo pipefail
-          out="build/windows/x64/runner/Release"
-          ls -la "$out" | head -20
-          echo "BUNDLE_DIR=$out" >> "$GITHUB_ENV"
+          exe=$(find . -path "*windows*runner*Release*" -name rustdesk.exe -print -quit)
+          if [ -z "$exe" ]; then
+            echo "::error::rustdesk.exe not found; build output tree:"
+            ls -la flutter/build 2>/dev/null || true
+            exit 1
+          fi
+          dir=$(dirname "$exe")
+          echo "bundle: $dir"
+          ls -la "$dir" | head -30
+          echo "BUNDLE_DIR=$dir" >> "$GITHUB_ENV"
 
       - name: Upload the bundle
         uses: actions/upload-artifact@v4
