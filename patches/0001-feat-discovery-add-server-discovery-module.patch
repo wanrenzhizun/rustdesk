@@ -1,4 +1,4 @@
-From 116cfc8665140e1ef29b9279c83b3aaed58db06c Mon Sep 17 00:00:00 2001
+From 81973e36cdffbb7115d3b53786ba97abf342622b Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Wed, 28 Oct 2026 20:37:15 +0800
 Subject: [PATCH 1/6] feat(discovery): add server discovery module
@@ -10,24 +10,27 @@ The endpoint accepts JSON or a plain text body whose first non-empty line is
 the ID server. Everything runs on a blocking worker with a 3s ceiling and a
 60s TTL cache, so the signalling thread never blocks on the network.
 ---
- src/discovery.rs | 366 +++++++++++++++++++++++++++++++++++++++++++++++
+ src/discovery.rs | 369 +++++++++++++++++++++++++++++++++++++++++++++++
  src/lib.rs       |   1 +
- 2 files changed, 367 insertions(+)
+ 2 files changed, 370 insertions(+)
  create mode 100644 src/discovery.rs
 
 diff --git a/src/discovery.rs b/src/discovery.rs
 new file mode 100644
-index 000000000..93a651fc1
+index 000000000..306b39604
 --- /dev/null
 +++ b/src/discovery.rs
-@@ -0,0 +1,366 @@
+@@ -0,0 +1,369 @@
 +use std::{
 +    io::Read,
 +    sync::Mutex,
 +    time::{Duration, Instant},
 +};
 +
-+use hbb_common::config::{Config, EXE_RENDEZVOUS_SERVER};
++use hbb_common::{
++    config::{Config, EXE_RENDEZVOUS_SERVER},
++    log, tokio,
++};
 +
 +/// Option holding the discovery endpoint. Empty means the feature is off.
 +pub const OPTION_DISCOVERY_URL: &str = "discovery-url";

@@ -1,4 +1,4 @@
-From 6d0d9c6c8de0c788800b99b7b4cd8e8f5b39ea30 Mon Sep 17 00:00:00 2001
+From 7bcce7825d5d114fa44ff595a60cadb375edd904 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Wed, 28 Oct 2026 20:37:15 +0800
 Subject: [PATCH 2/6] feat(discovery): resolve the rendezvous server through

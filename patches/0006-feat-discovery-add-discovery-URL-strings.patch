@@ -1,4 +1,4 @@
-From a15f1d2cb022720406da310a16beb7b97caee591 Mon Sep 17 00:00:00 2001
+From e91f7194d5aeca1185bc0251da0b1507cf835a7e Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Wed, 28 Oct 2026 20:37:18 +0800
 Subject: [PATCH 6/6] feat(discovery): add discovery URL strings

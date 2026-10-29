@@ -1,4 +1,4 @@
-From 095e0f61b80e9978ab4def21b919759ce3780696 Mon Sep 17 00:00:00 2001
+From bcac4c6f9cbdfb27d16146c948fe1c20dc913e24 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Wed, 28 Oct 2026 20:37:17 +0800
 Subject: [PATCH 5/6] feat(discovery): add discovery URL to the network
