@@ -1,7 +1,7 @@
 From c898877ab13c7edec7a0e8cf612be7e58fc27bbb Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Wed, 28 Oct 2026 20:37:17 +0800
-Subject: [PATCH 5/7] feat(discovery): add discovery URL to the network
+Subject: [PATCH 5/8] feat(discovery): add discovery URL to the network
  settings dialog
 
 Desktop and mobile share showServerSettingsWithValue, so one dialog change

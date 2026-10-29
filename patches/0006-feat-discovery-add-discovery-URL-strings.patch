@@ -1,7 +1,7 @@
 From 7acd6d8a1816e8be0ba46308b3758781327cf452 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Wed, 28 Oct 2026 20:37:18 +0800
-Subject: [PATCH 6/7] feat(discovery): add discovery URL strings
+Subject: [PATCH 6/8] feat(discovery): add discovery URL strings
 
 Keys are appended to every language file; en/cn/tw are translated and the rest
 fall back to the English text.

@@ -1,7 +1,7 @@
 From 0e053ce377d161a26edad30a65addb317e860e65 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Wed, 28 Oct 2026 20:37:16 +0800
-Subject: [PATCH 4/7] feat(discovery): re-apply discovery when discovery-url is
+Subject: [PATCH 4/8] feat(discovery): re-apply discovery when discovery-url is
  saved
 
 A save now triggers one mediator restart so the new endpoint is fetched on the
