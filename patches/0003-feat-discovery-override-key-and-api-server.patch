@@ -1,4 +1,4 @@
-From efa5a21c1db7ae80d15f970f375d069aaab8de56 Mon Sep 17 00:00:00 2001
+From 66bc7a7211293a840d0a0618c5e90c03ae46380d Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Wed, 28 Oct 2026 20:37:16 +0800
 Subject: [PATCH 3/6] feat(discovery): override key and api server

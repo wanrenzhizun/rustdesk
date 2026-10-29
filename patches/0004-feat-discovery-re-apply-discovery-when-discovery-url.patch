@@ -1,4 +1,4 @@
-From 3f413e81920e6da524fd36204dfb94dcbbcda555 Mon Sep 17 00:00:00 2001
+From 0e053ce377d161a26edad30a65addb317e860e65 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Wed, 28 Oct 2026 20:37:16 +0800
 Subject: [PATCH 4/6] feat(discovery): re-apply discovery when discovery-url is
@@ -7,18 +7,26 @@ Subject: [PATCH 4/6] feat(discovery): re-apply discovery when discovery-url is
 A save now triggers one mediator restart so the new endpoint is fetched on the
 next attempt instead of after an unrelated connection failure.
 ---
- src/flutter_ffi.rs | 5 +++++
- 1 file changed, 5 insertions(+)
+ src/flutter_ffi.rs | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
 diff --git a/src/flutter_ffi.rs b/src/flutter_ffi.rs
-index bd9bd9657..12d09537a 100644
+index bd9bd9657..8f2b030ee 100644
 --- a/src/flutter_ffi.rs
 +++ b/src/flutter_ffi.rs
-@@ -1074,6 +1074,11 @@ pub fn main_set_option(key: String, value: String) {
+@@ -1056,6 +1056,7 @@ pub fn main_set_option(key: String, value: String) {
+     // If `is_allow_tls_fallback` and https proxy is used, we need to restart rendezvous mediator.
+     // No need to check if https proxy is used, because this option does not change frequently
+     // and restarting mediator is safe even https proxy is not used.
++    let is_discovery_url = key.eq(crate::discovery::OPTION_DISCOVERY_URL);
+     let is_allow_tls_fallback = key.eq(keys::OPTION_ALLOW_INSECURE_TLS_FALLBACK);
+     if is_allow_tls_fallback
+         || key.eq("custom-rendezvous-server")
+@@ -1074,6 +1075,11 @@ pub fn main_set_option(key: String, value: String) {
      } else {
          set_option(key, value.clone());
      }
-+    if key.eq(crate::discovery::OPTION_DISCOVERY_URL) {
++    if is_discovery_url {
 +        // Reconnect now so the new endpoint is fetched at the next attempt instead of after some
 +        // unrelated connection failure.
 +        crate::rendezvous_mediator::RendezvousMediator::restart();
