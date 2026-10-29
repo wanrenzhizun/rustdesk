@@ -1,0 +1,172 @@
+From fa4e89e37345ed4db384cba78afdf6e38512d373 Mon Sep 17 00:00:00 2001
+From: huzhaolun <huzhaolun@qq.com>
+Date: Thu, 29 Oct 2026 14:29:23 +0800
+Subject: [PATCH 7/7] feat(discovery): expose discovery URL as its own network
+ setting
+
+A dedicated tile next to ID/Relay Server opens a single field dialog, so the
+setting is reachable without opening the server dialog. Both write the same
+discovery-url option; the shareable server config keeps carrying the field.
+---
+ .../desktop/pages/desktop_setting_page.dart   |   7 +
+ flutter/lib/mobile/widgets/dialog.dart        | 122 ++++++++++++++----
+ 2 files changed, 105 insertions(+), 24 deletions(-)
+
+diff --git a/flutter/lib/desktop/pages/desktop_setting_page.dart b/flutter/lib/desktop/pages/desktop_setting_page.dart
+index 4560b3d69..abd7f3353 100644
+--- a/flutter/lib/desktop/pages/desktop_setting_page.dart
++++ b/flutter/lib/desktop/pages/desktop_setting_page.dart
+@@ -1910,6 +1910,13 @@ class _NetworkState extends State<_Network> with AutomaticKeepAliveClientMixin {
+                   title: 'ID/Relay Server',
+                   onTap: () => showServerSettings(gFFI.dialogManager, setState),
+                 ),
++              if (!hideServer)
++                listTile(
++                  icon: Icons.cloud_download_outlined,
++                  title: 'Discovery URL',
++                  onTap: () =>
++                      showDiscoveryUrlDialog(gFFI.dialogManager, setState),
++                ),
+               if (!hideProxy && !hideServer) divider,
+               if (!hideProxy)
+                 listTile(
+diff --git a/flutter/lib/mobile/widgets/dialog.dart b/flutter/lib/mobile/widgets/dialog.dart
+index f713864cb..3b6de7148 100644
+--- a/flutter/lib/mobile/widgets/dialog.dart
++++ b/flutter/lib/mobile/widgets/dialog.dart
+@@ -194,30 +194,7 @@ void showServerSettingsWithValue(
+                   ),
+                   SizedBox(height: 8),
+                   buildField('Key', keyCtrl, ''),
+-                  SizedBox(height: 8),
+-                  buildField(
+-                    translate('Discovery URL'),
+-                    discoveryCtrl,
+-                    '',
+-                    validator: (v) {
+-                      if (v != null &&
+-                          v.isNotEmpty &&
+-                          !v.startsWith('https://')) {
+-                        return translate("invalid_http");
+-                      }
+-                      return null;
+-                    },
+-                  ),
+-                  Padding(
+-                    padding: EdgeInsetsDirectional.only(
+-                      start: isDesktop || isWeb ? labelWidth + labelSpacing : 0,
+-                      top: 4,
+-                    ),
+-                    child: Text(
+-                      translate('discovery_url_tip'),
+-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+-                    ),
+-                  ),
++
+                   if (isInProgress)
+                     Padding(
+                       padding: EdgeInsets.only(top: 8),
+@@ -300,3 +277,100 @@ void setPrivacyModeDialog(
+     );
+   }, backDismiss: true, clickMaskDismiss: true);
+ }
++
++void showDiscoveryUrlDialog(
++    OverlayDialogManager dialogManager, void Function(VoidCallback) setState) async {
++  final options = await bind.mainGetOptions();
++  String current = '';
++  try {
++    final map = jsonDecode(options);
++    current = (map['discovery-url'] ?? '') as String;
++  } catch (e) {
++    debugPrint('Invalid options: $e');
++  }
++  showDiscoveryUrlDialogWithValue(current, dialogManager, setState);
++}
++
++void showDiscoveryUrlDialogWithValue(
++    String current, OverlayDialogManager dialogManager, void Function(VoidCallback)? upSetState) {
++  const labelWidth = 120.0;
++  const labelSpacing = 8.0;
++  final urlCtrl = TextEditingController(text: current);
++  final errMsg = ''.obs;
++  dialogManager.show((setState, close, context) {
++    Future<bool> submit() async {
++      final value = urlCtrl.text.trim();
++      if (value.isNotEmpty && !value.startsWith('https://')) {
++        errMsg.value = translate('invalid_http');
++        return false;
++      }
++      await bind.mainSetOption(key: 'discovery-url', value: value);
++      return true;
++    }
++
++    Widget field() {
++      final input = serverSettingsTextFormField(
++        label: translate('Discovery URL'),
++        controller: urlCtrl,
++        errorMsg: errMsg.value,
++        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
++        showLabelText: !(isDesktop || isWeb),
++        autofocus: true,
++      ).workaroundFreezeLinuxMint();
++      if (isDesktop || isWeb) {
++        return Row(
++          children: [
++            SizedBox(
++              width: labelWidth,
++              child: Text(translate('Discovery URL')),
++            ),
++            SizedBox(width: labelSpacing),
++            Expanded(child: input),
++          ],
++        );
++      }
++      return input;
++    }
++
++    return CustomAlertDialog(
++      title: Text(translate('Discovery URL')),
++      content: ConstrainedBox(
++        constraints: const BoxConstraints(minWidth: 500),
++        child: Form(
++          child: Obx(() => Column(
++                mainAxisSize: MainAxisSize.min,
++                crossAxisAlignment: CrossAxisAlignment.start,
++                children: [
++                  field(),
++                  Padding(
++                    padding: EdgeInsetsDirectional.only(
++                      start: isDesktop || isWeb ? labelWidth + labelSpacing : 0,
++                      top: 6,
++                    ),
++                    child: Text(
++                      translate('discovery_url_tip'),
++                      style: const TextStyle(fontSize: 12, color: Colors.grey),
++                    ),
++                  ),
++                ],
++              )),
++        ),
++      ),
++      actions: [
++        dialogButton('Cancel', onPressed: () {
++          close();
++        }, isOutline: true),
++        dialogButton(
++          'OK',
++          onPressed: () async {
++            if (await submit()) {
++              close();
++              showToast(translate('Successful'));
++              upSetState?.call(() {});
++            }
++          },
++        ),
++      ],
++    );
++  });
++}
+-- 
+2.56.0.windows.2
+
