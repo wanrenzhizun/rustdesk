@@ -1,0 +1,56 @@
+From 1983eb084762dabe11256306450869e9ebc82b6e Mon Sep 17 00:00:00 2001
+From: huzhaolun <huzhaolun@qq.com>
+Date: Fri, 30 Oct 2026 10:51:05 +0800
+Subject: [PATCH 2/3] fix(discovery): bound the endpoint dialog so it does not
+ fill the window
+
+AlertDialog stretched the one-field form to the full height, leaving a large
+blank area under the input. The bound belongs on this dialog only; the
+ID/Relay Server dialog keeps its own sizing.
+---
+ flutter/lib/mobile/widgets/dialog.dart | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
+
+diff --git a/flutter/lib/mobile/widgets/dialog.dart b/flutter/lib/mobile/widgets/dialog.dart
+index 977632e0d..ca3621f24 100644
+--- a/flutter/lib/mobile/widgets/dialog.dart
++++ b/flutter/lib/mobile/widgets/dialog.dart
+@@ -154,12 +154,7 @@ void showServerSettingsWithValue(
+         ],
+       ),
+       content: ConstrainedBox(
+-        constraints: BoxConstraints(
+-          minWidth: 500,
+-          // Without a height bound AlertDialog stretches a one-field form to the
+-          // whole window, which shows up as a large blank area under the field.
+-          maxHeight: isDesktop || isWeb ? 160 : double.infinity,
+-        ),
++        constraints: const BoxConstraints(minWidth: 500),
+         child: Form(
+           child: Obx(() => Column(
+                 mainAxisSize: MainAxisSize.min,
+@@ -199,7 +194,6 @@ void showServerSettingsWithValue(
+                   ),
+                   SizedBox(height: 8),
+                   buildField('Key', keyCtrl, ''),
+-
+                   if (isInProgress)
+                     Padding(
+                       padding: EdgeInsets.only(top: 8),
+@@ -343,7 +337,12 @@ void showDiscoveryUrlDialogWithValue(
+     return CustomAlertDialog(
+       title: Text(translate('Discovery URL')),
+       content: ConstrainedBox(
+-        constraints: const BoxConstraints(minWidth: 500),
++        constraints: BoxConstraints(
++          minWidth: 500,
++          // AlertDialog otherwise stretches this one-field form to the window,
++          // which leaves a large blank area under the input.
++          maxHeight: isDesktop || isWeb ? 180 : double.infinity,
++        ),
+         child: Form(
+           child: Obx(() => Column(
+                 mainAxisSize: MainAxisSize.min,
+-- 
+2.56.0.windows.2
+
