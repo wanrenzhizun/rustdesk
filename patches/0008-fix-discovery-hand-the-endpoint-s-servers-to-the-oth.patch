@@ -1,0 +1,67 @@
+From a93a3eda1e79fe34b44df42a127ddf9ae06e8792 Mon Sep 17 00:00:00 2001
+From: huzhaolun <huzhaolun@qq.com>
+Date: Fri, 30 Oct 2026 21:47:28 +0800
+Subject: [PATCH 8/8] fix(discovery): hand the endpoint's servers to the other
+ processes
+
+The UI and the tray run outside the host process and read their options over IPC from it, so the
+values the endpoint resolved never reached them: the window kept reporting the public server and
+the sign-in dialog kept offering the public API while the host was already connected to the
+endpoint's. The host now overlays what it resolved onto the options answer it sends, which is the
+same place upstream injects the resolved rendezvous server.
+---
+ src/discovery.rs | 23 +++++++++++++++++++++++
+ src/ipc.rs       |  3 ++-
+ 2 files changed, 25 insertions(+), 1 deletion(-)
+
+diff --git a/src/discovery.rs b/src/discovery.rs
+index 8c47649e8..7a535b84c 100644
+--- a/src/discovery.rs
++++ b/src/discovery.rs
+@@ -173,6 +173,29 @@ pub async fn sync() {
+ }
+ 
+ /// Whether the rendezvous server in use comes from the endpoint rather than the manual setting.
++/// Overlays the servers the endpoint announced onto an options map.
++///
++/// The client processes read their options over IPC from the host, so the values resolved here
++/// have to travel with that answer: without this the UI keeps reporting the public server while
++/// the host is already connected to the endpoint's.
++pub fn overlay_options(options: &mut std::collections::HashMap<String, String>) {
++    let state = STATE.lock().unwrap();
++    if !state.is_active() {
++        return;
++    }
++    for (option, value) in [
++        ("custom-rendezvous-server", &state.active.id_server),
++        ("relay-server", &state.active.relay_server),
++        ("api-server", &state.active.api_server),
++        ("online-server", &state.active.online_server),
++        ("key", &state.active.key),
++    ] {
++        if !value.is_empty() {
++            options.insert(option.to_owned(), value.clone());
++        }
++    }
++}
++
+ pub fn id_server() -> Option<String> {
+     non_empty(STATE.lock().unwrap().active.id_server.clone())
+ }
+diff --git a/src/ipc.rs b/src/ipc.rs
+index 44a1c8d51..1bfc75cd8 100644
+--- a/src/ipc.rs
++++ b/src/ipc.rs
+@@ -1073,7 +1073,8 @@ async fn handle(data: Data, stream: &mut Connection) {
+         },
+         Data::Options(value) => match value {
+             None => {
+-                let v = Config::get_options();
++                let mut v = Config::get_options();
++                crate::discovery::overlay_options(&mut v);
+                 allow_err!(stream.send(&Data::Options(Some(v))).await);
+             }
+             Some(value) => {
+-- 
+2.56.0.windows.2
+

@@ -1,7 +1,7 @@
 From 07fc623141e121ead9cfbce50b2c11dd6043f818 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 13:30:17 +0800
-Subject: [PATCH 5/7] feat(update): follow this fork's GitHub releases
+Subject: [PATCH 5/8] feat(update): follow this fork's GitHub releases
 
 The client asked api.rustdesk.com which release to install, so a patched build
 would offer the official one and lose every patch. It now reads the fork's own
