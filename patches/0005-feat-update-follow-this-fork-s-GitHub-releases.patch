@@ -1,4 +1,4 @@
-From 07fc623141e121ead9cfbce50b2c11dd6043f818 Mon Sep 17 00:00:00 2001
+From 9322d19b7f70d57b9c8ec19ce0da39176bbe0385 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 13:30:17 +0800
 Subject: [PATCH 05/11] feat(update): follow this fork's GitHub releases
@@ -99,5 +99,5 @@ index bb96bb57e..843ae2a7f 100644
              upsert_tls_cache(tls_url, used_tls_type, false);
              let status = response.status();
 -- 
-2.56.0.windows.2
+2.56.0
 

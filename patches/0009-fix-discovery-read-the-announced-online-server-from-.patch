@@ -1,4 +1,4 @@
-From 22f2e190252ebd0c3e3f84647f9698dfc87adcdf Mon Sep 17 00:00:00 2001
+From aaa8e4217e07f88e0c085b1c931aa8b465b57169 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 22:08:27 +0800
 Subject: [PATCH 09/11] fix(discovery): read the announced online server from
@@ -33,5 +33,5 @@ index 7a535b84c..f4471ab3e 100644
  
  /// The announced relay server, when it is currently overridden.
 -- 
-2.56.0.windows.2
+2.56.0
 

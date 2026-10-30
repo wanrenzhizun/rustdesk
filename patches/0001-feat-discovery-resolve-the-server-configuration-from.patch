@@ -1,4 +1,4 @@
-From fc566394c1a65135202a44830b419422b7ae1d0c Mon Sep 17 00:00:00 2001
+From e9758d24f93ff6298b76e278e54db66bcc08200e Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 10:09:51 +0800
 Subject: [PATCH 01/11] feat(discovery): resolve the server configuration from
@@ -1540,5 +1540,5 @@ index 042d62b6c..eb8018a8a 100644
          if relay_server.is_empty() {
              relay_server = provided_by_rendezvous_server;
 -- 
-2.56.0.windows.2
+2.56.0
 

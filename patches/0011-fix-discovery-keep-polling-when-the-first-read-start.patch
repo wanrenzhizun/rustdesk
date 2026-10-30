@@ -1,4 +1,4 @@
-From f182d0967b22f34f5f8ac37182c9d7769596010a Mon Sep 17 00:00:00 2001
+From f7e5f785c9dc76ff882965531f251129b846f5bb Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Sat, 31 Oct 2026 00:25:32 +0800
 Subject: [PATCH 11/11] fix(discovery): keep polling when the first read
@@ -117,5 +117,5 @@ index 4ef78c274..b1083a847 100644
      }
      let (lock, cv) = gate;
 -- 
-2.56.0.windows.2
+2.56.0
 

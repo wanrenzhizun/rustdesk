@@ -1,4 +1,4 @@
-From 2181c298741ea1e205a7cfa595ebce661e1795b6 Mon Sep 17 00:00:00 2001
+From adc7a4e50b904f87d3851a622af3a7dcb1e6f85c Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 19:38:59 +0800
 Subject: [PATCH 06/11] feat(discovery): expose the discovery URL on mobile
@@ -31,5 +31,5 @@ index 3ea64b37a..4f6ba37d9 100644
              SettingsTile(
                  title: Text(translate('Socks5/Http(s) Proxy')),
 -- 
-2.56.0.windows.2
+2.56.0
 
