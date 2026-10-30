@@ -14,6 +14,7 @@ const WATCH_INTERVAL: std::time::Duration = std::time::Duration::from_secs(2);
 
 /// Option holding the discovery endpoint. Empty means the feature is off.
 pub const OPTION_DISCOVERY_URL: &str = "discovery-url";
+const OPTION_ONLINE_SERVER: &str = "online-server";
 
 const CACHE_TTL: Duration = Duration::from_secs(60);
 const FETCH_TIMEOUT: Duration = Duration::from_secs(3);
@@ -211,6 +212,7 @@ pub fn api_server() -> Option<String> {
 /// endpoints share a host and stay adjacent, as they do on an unmapped rustdesk-server.
 pub fn online_server() -> Option<String> {
     non_empty(STATE.lock().unwrap().active.online_server.clone())
+        .or_else(|| non_empty(Config::get_option(OPTION_ONLINE_SERVER)))
 }
 
 /// The announced relay server, when it is currently overridden.
