@@ -816,6 +816,9 @@ pub async fn get_rendezvous_server(ms_timeout: u64) -> (String, Vec<String>, boo
 #[inline]
 #[cfg(any(target_os = "android", target_os = "ios"))]
 fn get_rendezvous_server_(_ms_timeout: u64) -> (String, Vec<String>) {
+    if let Some(id_server) = crate::discovery::id_server() {
+        return (id_server, Vec::new());
+    }
     (
         Config::get_rendezvous_server(),
         Config::get_rendezvous_servers(),
@@ -825,6 +828,9 @@ fn get_rendezvous_server_(_ms_timeout: u64) -> (String, Vec<String>) {
 #[inline]
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 async fn get_rendezvous_server_(ms_timeout: u64) -> (String, Vec<String>) {
+    if let Some(id_server) = crate::discovery::id_server() {
+        return (id_server, Vec::new());
+    }
     crate::ipc::get_rendezvous_server(ms_timeout).await
 }
 
