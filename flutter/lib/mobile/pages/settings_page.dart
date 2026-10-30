@@ -776,6 +776,16 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                     setState(callback);
                   });
                 }),
+          if (!disabledSettings && !_hideNetwork && !_hideServer)
+            SettingsTile(
+                title: Text(translate('Discovery URL')),
+                leading: Icon(Icons.cloud_download_outlined),
+                onPressed: (context) {
+                  showDiscoveryUrlDialog(gFFI.dialogManager, (callback) async {
+                    _isUsingPublicServer = await bind.mainIsUsingPublicServer();
+                    setState(callback);
+                  });
+                }),
           if (!_hideNetwork && !_hideProxy)
             SettingsTile(
                 title: Text(translate('Socks5/Http(s) Proxy')),
