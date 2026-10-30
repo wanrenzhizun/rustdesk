@@ -255,6 +255,9 @@ jobs:
           Write-Host "version=$version"
           pushd ./res/msi
           python preprocess.py -d ../../rustdesk -v $version
+          # WiX pulls its DUtil/WcaUtil packages through NuGet; without this restore the
+          # wixproj and CustomActions projects cannot resolve them.
+          nuget restore msi.sln
           msbuild msi.sln -p:Configuration=Release -p:Platform=x64 /p:TargetVersion=Windows10
           $msi = Get-ChildItem ./Package/bin/*/Release/en-us/Package.msi | Select-Object -First 1
           popd
