@@ -154,12 +154,7 @@ void showServerSettingsWithValue(
         ],
       ),
       content: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: 500,
-          // Without a height bound AlertDialog stretches a one-field form to the
-          // whole window, which shows up as a large blank area under the field.
-          maxHeight: isDesktop || isWeb ? 160 : double.infinity,
-        ),
+        constraints: const BoxConstraints(minWidth: 500),
         child: Form(
           child: Obx(() => Column(
                 mainAxisSize: MainAxisSize.min,
@@ -199,7 +194,6 @@ void showServerSettingsWithValue(
                   ),
                   SizedBox(height: 8),
                   buildField('Key', keyCtrl, ''),
-
                   if (isInProgress)
                     Padding(
                       padding: EdgeInsets.only(top: 8),
@@ -343,7 +337,12 @@ void showDiscoveryUrlDialogWithValue(
     return CustomAlertDialog(
       title: Text(translate('Discovery URL')),
       content: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 500),
+        constraints: BoxConstraints(
+          minWidth: 500,
+          // AlertDialog otherwise stretches this one-field form to the window,
+          // which leaves a large blank area under the input.
+          maxHeight: isDesktop || isWeb ? 180 : double.infinity,
+        ),
         child: Form(
           child: Obx(() => Column(
                 mainAxisSize: MainAxisSize.min,
