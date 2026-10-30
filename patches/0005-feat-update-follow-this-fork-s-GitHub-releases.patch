@@ -1,0 +1,103 @@
+From 07fc623141e121ead9cfbce50b2c11dd6043f818 Mon Sep 17 00:00:00 2001
+From: huzhaolun <huzhaolun@qq.com>
+Date: Fri, 30 Oct 2026 13:30:17 +0800
+Subject: [PATCH 5/5] feat(update): follow this fork's GitHub releases
+
+The client asked api.rustdesk.com which release to install, so a patched build
+would offer the official one and lose every patch. It now reads the fork's own
+latest release and accepts a release page from any owner; the response shape is
+GitHub's release object instead of the version service payload.
+---
+ src/common.rs | 42 +++++++++++++++++++++++++++++-------------
+ 1 file changed, 29 insertions(+), 13 deletions(-)
+
+diff --git a/src/common.rs b/src/common.rs
+index bb96bb57e..843ae2a7f 100644
+--- a/src/common.rs
++++ b/src/common.rs
+@@ -1082,9 +1082,10 @@ pub(crate) fn release_id_from_update_url(update_url: &str) -> ResultType<String>
+         bail!("Update URL has no path: {}", update_url);
+     };
+     let segments = segments.collect::<Vec<_>>();
++    // Any owner is accepted: this build follows its own fork's releases.
+     let release_id = match segments.as_slice() {
+-        ["rustdesk", "rustdesk", "releases", "tag", release_id] => *release_id,
+-        ["rustdesk", "rustdesk", "releases", "tag", release_id, ""] => *release_id,
++        [_owner, "rustdesk", "releases", "tag", release_id] => *release_id,
++        [_owner, "rustdesk", "releases", "tag", release_id, ""] => *release_id,
+         _ => bail!(
+             "Update URL is not a RustDesk release tag URL: {}",
+             update_url
+@@ -1137,8 +1138,16 @@ fn clear_software_update_url() {
+ }
+ 
+ fn process_software_update_check_response(bytes: Bytes) -> ResultType<()> {
+-    let resp: hbb_common::VersionCheckResponse = serde_json::from_slice(&bytes)?;
+-    let response_url = resp.url;
++    // GitHub's release object; only the page URL and tag matter here.
++    let resp: serde_json::Value = serde_json::from_slice(&bytes)?;
++    let response_url = resp
++        .get("html_url")
++        .and_then(|v| v.as_str())
++        .unwrap_or_default()
++        .to_owned();
++    if response_url.is_empty() {
++        bail!("Release response has no html_url");
++    }
+     let release_id = release_id_from_update_url(&response_url)?;
+     let latest_release_version = display_version_from_release_id(&release_id)?;
+ 
+@@ -1159,26 +1168,33 @@ fn process_software_update_check_response(bytes: Bytes) -> ResultType<()> {
+     Ok(())
+ }
+ 
+-// No need to check `danger_accept_invalid_cert` for now.
+-// Because the url is always `https://api.rustdesk.com/version/latest`.
++/// Releases this build follows for its own updates.
++const UPDATE_RELEASES_API: &str =
++    "https://api.github.com/repos/wanrenzhizun/rustdesk/releases/latest";
++
++// Releases are read straight from the fork's GitHub releases, so no update service is needed.
+ #[tokio::main(flavor = "current_thread")]
+ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
+-    let (request, url) =
+-        hbb_common::version_check_request(hbb_common::VER_TYPE_RUSTDESK_CLIENT.to_string());
+     let proxy_conf = Config::get_socks();
+-    let tls_url = get_url_for_tls(&url, &proxy_conf);
++    let tls_url = get_url_for_tls(UPDATE_RELEASES_API, &proxy_conf);
+     let tls_type = get_cached_tls_type(tls_url);
+     let is_tls_not_cached = tls_type.is_none();
+     let tls_type = tls_type.unwrap_or(TlsType::Rustls);
+     let client = create_http_client_async(tls_type, false);
+-    let latest_release_response: ResultType<_> = match client.post(&url).json(&request).send().await
+-    {
++    let send = |client: &reqwest::Client| {
++        client
++            .get(UPDATE_RELEASES_API)
++            .header("User-Agent", "rustdesk-updater")
++            .header("Accept", "application/vnd.github+json")
++            .send()
++    };
++    let release_response: ResultType<_> = match send(&client).await {
+         Ok(resp) => Ok((tls_type, resp)),
+         Err(err) => {
+             if is_tls_not_cached && err.is_request() {
+                 let tls_type = TlsType::NativeTls;
+                 let client = create_http_client_async(tls_type, false);
+-                match client.post(&url).json(&request).send().await {
++                match send(&client).await {
+                     Ok(resp) => Ok((tls_type, resp)),
+                     Err(err) => Err(err.into()),
+                 }
+@@ -1187,7 +1203,7 @@ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
+             }
+         }
+     };
+-    let response_bytes = match latest_release_response {
++    let response_bytes = match release_response {
+         Ok((used_tls_type, response)) => {
+             upsert_tls_cache(tls_url, used_tls_type, false);
+             let status = response.status();
+-- 
+2.56.0.windows.2
+
