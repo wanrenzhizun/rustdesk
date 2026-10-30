@@ -418,6 +418,29 @@ jobs:
         with:
           toolchain: ${{ env.RUST_VERSION }}
 
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: /opt/artifacts/vcpkg
+          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
+
+      - name: Install the host tools vcpkg needs
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y nasm
+
+      - name: Install vcpkg dependencies
+        shell: bash
+        # hwcodec's build script reads VCPKG_ROOT unconditionally, so the linux triplet has
+        # to be populated before cargo runs.
+        run: |
+          set -euo pipefail
+          if ! "$VCPKG_ROOT/vcpkg" install --triplet x64-linux --x-install-root="$VCPKG_ROOT/installed"; then
+            find "$VCPKG_ROOT" -name '*.log' | while read -r f; do echo "== $f"; cat "$f"; done
+            exit 1
+          fi
+
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
         with:
@@ -596,6 +619,12 @@ jobs:
             echo "keyAlias=${ANDROID_KEY_ALIAS}"
             echo "storeFile=rustdesk-fork.jks"
           } > flutter/android/key.properties
+
+      - name: Use Java 17 for the Gradle build
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
 
       - name: Build the APK
         shell: bash
