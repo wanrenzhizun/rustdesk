@@ -1,7 +1,7 @@
 From f4c4f2b0a7f6a131a68224be004c0b4799163b1e Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 11:12:10 +0800
-Subject: [PATCH 3/8] feat(discovery): let the endpoint announce the
+Subject: [PATCH 3/9] feat(discovery): let the endpoint announce the
  online-status server
 
 The client derives the online-status port as the rendezvous port minus one,
