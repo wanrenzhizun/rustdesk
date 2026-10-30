@@ -1,0 +1,1544 @@
+From fc566394c1a65135202a44830b419422b7ae1d0c Mon Sep 17 00:00:00 2001
+From: huzhaolun <huzhaolun@qq.com>
+Date: Fri, 30 Oct 2026 10:09:51 +0800
+Subject: [PATCH] feat(discovery): resolve the server configuration from a
+ discovery URL
+
+Adds a discovery endpoint so the client can follow id_server, relay_server,
+api_server and key from one HTTPS/HTTP document instead of hard-coding them.
+The overrides live in memory only, so removing the URL restores the manual
+settings, and a failed fetch keeps the last good answer.
+
+The endpoint is watched from the module itself rather than hooked into
+flutter_ffi.rs, which upstream edits often; that file stays byte-identical
+with upstream so daily syncs do not conflict there.
+---
+ flutter/lib/common.dart                       |  26 +-
+ .../desktop/pages/desktop_setting_page.dart   |   7 +
+ flutter/lib/mobile/widgets/dialog.dart        | 128 +++++-
+ src/common.rs                                 |   9 +
+ src/discovery.rs                              | 407 ++++++++++++++++++
+ src/lang/ar.rs                                |   3 +
+ src/lang/az.rs                                |   3 +
+ src/lang/be.rs                                |   3 +
+ src/lang/bg.rs                                |   3 +
+ src/lang/ca.rs                                |   3 +
+ src/lang/cn.rs                                |   3 +
+ src/lang/cs.rs                                |   3 +
+ src/lang/da.rs                                |   3 +
+ src/lang/de.rs                                |   3 +
+ src/lang/el.rs                                |   3 +
+ src/lang/en.rs                                |   3 +
+ src/lang/eo.rs                                |   3 +
+ src/lang/es.rs                                |   3 +
+ src/lang/et.rs                                |   3 +
+ src/lang/eu.rs                                |   3 +
+ src/lang/fa.rs                                |   3 +
+ src/lang/fi.rs                                |   3 +
+ src/lang/fr.rs                                |   3 +
+ src/lang/ge.rs                                |   3 +
+ src/lang/gl.rs                                |   3 +
+ src/lang/gu.rs                                |   3 +
+ src/lang/he.rs                                |   3 +
+ src/lang/hi.rs                                |   3 +
+ src/lang/hr.rs                                |   3 +
+ src/lang/hu.rs                                |   3 +
+ src/lang/id.rs                                |   3 +
+ src/lang/it.rs                                |   3 +
+ src/lang/ja.rs                                |   3 +
+ src/lang/ko.rs                                |   3 +
+ src/lang/kz.rs                                |   3 +
+ src/lang/lt.rs                                |   3 +
+ src/lang/lv.rs                                |   3 +
+ src/lang/ml.rs                                |   3 +
+ src/lang/nb.rs                                |   3 +
+ src/lang/nl.rs                                |   3 +
+ src/lang/pl.rs                                |   3 +
+ src/lang/pt_BR.rs                             |   3 +
+ src/lang/pt_PT.rs                             |   3 +
+ src/lang/ro.rs                                |   3 +
+ src/lang/ru.rs                                |   3 +
+ src/lang/sc.rs                                |   3 +
+ src/lang/sk.rs                                |   3 +
+ src/lang/sl.rs                                |   3 +
+ src/lang/sq.rs                                |   3 +
+ src/lang/sr.rs                                |   3 +
+ src/lang/sv.rs                                |   3 +
+ src/lang/ta.rs                                |   3 +
+ src/lang/template.rs                          |   3 +
+ src/lang/th.rs                                |   3 +
+ src/lang/tr.rs                                |   3 +
+ src/lang/tw.rs                                |   3 +
+ src/lang/uk.rs                                |   3 +
+ src/lang/ur.rs                                |   3 +
+ src/lang/vi.rs                                |   3 +
+ src/lib.rs                                    |   1 +
+ src/rendezvous_mediator.rs                    |   6 +
+ 61 files changed, 741 insertions(+), 5 deletions(-)
+ create mode 100644 src/discovery.rs
+
+diff --git a/flutter/lib/common.dart b/flutter/lib/common.dart
+index b80e0b5f9..8c17137b3 100644
+--- a/flutter/lib/common.dart
++++ b/flutter/lib/common.dart
+@@ -2923,13 +2923,19 @@ class ServerConfig {
+   late String relayServer;
+   late String apiServer;
+   late String key;
++  late String discoveryUrl;
+ 
+   ServerConfig(
+-      {String? idServer, String? relayServer, String? apiServer, String? key}) {
++      {String? idServer,
++      String? relayServer,
++      String? apiServer,
++      String? key,
++      String? discoveryUrl}) {
+     this.idServer = idServer?.trim() ?? '';
+     this.relayServer = relayServer?.trim() ?? '';
+     this.apiServer = apiServer?.trim() ?? '';
+     this.key = key?.trim() ?? '';
++    this.discoveryUrl = discoveryUrl?.trim() ?? '';
+   }
+ 
+   /// decode from shared string (from user shared or rustdesk-server generated)
+@@ -2949,6 +2955,7 @@ class ServerConfig {
+     relayServer = json['relay'] ?? '';
+     apiServer = json['api'] ?? '';
+     key = json['key'] ?? '';
++    discoveryUrl = json['discovery'] ?? '';
+   }
+ 
+   /// encode to shared string
+@@ -2959,6 +2966,7 @@ class ServerConfig {
+     config['relay'] = relayServer.trim();
+     config['api'] = apiServer.trim();
+     config['key'] = key.trim();
++    config['discovery'] = discoveryUrl.trim();
+     return base64UrlEncode(Uint8List.fromList(jsonEncode(config).codeUnits))
+         .split('')
+         .reversed
+@@ -2970,7 +2978,8 @@ class ServerConfig {
+       : idServer = options['custom-rendezvous-server'] ?? "",
+         relayServer = options['relay-server'] ?? "",
+         apiServer = options['api-server'] ?? "",
+-        key = options['key'] ?? "";
++        key = options['key'] ?? "",
++        discoveryUrl = options['discovery-url'] ?? "";
+ }
+ 
+ Widget dialogButton(String text,
+@@ -3594,11 +3603,22 @@ Future<bool> setServerConfig(
+   config.relayServer = removeEndSlash(config.relayServer.trim());
+   config.apiServer = removeEndSlash(config.apiServer.trim());
+   config.key = config.key.trim();
++  config.discoveryUrl = config.discoveryUrl.trim();
++  if (config.discoveryUrl.isNotEmpty &&
++      !config.discoveryUrl.startsWith('https://') &&
++      !config.discoveryUrl.startsWith('http://')) {
++    showToast(
++        '${translate("Discovery URL")}: ${translate("invalid_http")}');
++    return false;
++  }
+   if (controllers != null) {
+     controllers[0].text = config.idServer;
+     controllers[1].text = config.relayServer;
+     controllers[2].text = config.apiServer;
+     controllers[3].text = config.key;
++    if (controllers.length > 4) {
++      controllers[4].text = config.discoveryUrl;
++    }
+   }
+   // id
+   if (config.idServer.isNotEmpty && errMsgs != null) {
+@@ -3633,6 +3653,8 @@ Future<bool> setServerConfig(
+   await bind.mainSetOption(key: 'relay-server', value: config.relayServer);
+   await bind.mainSetOption(key: 'api-server', value: config.apiServer);
+   await bind.mainSetOption(key: 'key', value: config.key);
++  await bind.mainSetOption(
++      key: 'discovery-url', value: config.discoveryUrl);
+   final newApiServer = await bind.mainGetApiServer();
+   if (oldApiServer.isNotEmpty &&
+       oldApiServer != newApiServer &&
+diff --git a/flutter/lib/desktop/pages/desktop_setting_page.dart b/flutter/lib/desktop/pages/desktop_setting_page.dart
+index 730d75827..e6ac18ff9 100644
+--- a/flutter/lib/desktop/pages/desktop_setting_page.dart
++++ b/flutter/lib/desktop/pages/desktop_setting_page.dart
+@@ -1931,6 +1931,13 @@ class _NetworkState extends State<_Network> with AutomaticKeepAliveClientMixin {
+                   title: 'ID/Relay Server',
+                   onTap: () => showServerSettings(gFFI.dialogManager, setState),
+                 ),
++              if (!hideServer)
++                listTile(
++                  icon: Icons.cloud_download_outlined,
++                  title: 'Discovery URL',
++                  onTap: () =>
++                      showDiscoveryUrlDialog(gFFI.dialogManager, setState),
++                ),
+               if (!hideProxy && !hideServer) divider,
+               if (!hideProxy)
+                 listTile(
+diff --git a/flutter/lib/mobile/widgets/dialog.dart b/flutter/lib/mobile/widgets/dialog.dart
+index 4e8179e8f..977632e0d 100644
+--- a/flutter/lib/mobile/widgets/dialog.dart
++++ b/flutter/lib/mobile/widgets/dialog.dart
+@@ -77,12 +77,14 @@ void showServerSettingsWithValue(
+   final relayCtrl = TextEditingController(text: serverConfig.relayServer);
+   final apiCtrl = TextEditingController(text: serverConfig.apiServer);
+   final keyCtrl = TextEditingController(text: serverConfig.key);
++  final discoveryCtrl =
++      TextEditingController(text: serverConfig.discoveryUrl);
+ 
+   RxString idServerMsg = ''.obs;
+   RxString relayServerMsg = ''.obs;
+   RxString apiServerMsg = ''.obs;
+ 
+-  final controllers = [idCtrl, relayCtrl, apiCtrl, keyCtrl];
++  final controllers = [idCtrl, relayCtrl, apiCtrl, keyCtrl, discoveryCtrl];
+   final errMsgs = [
+     idServerMsg,
+     relayServerMsg,
+@@ -101,7 +103,8 @@ void showServerSettingsWithValue(
+               idServer: idCtrl.text.trim(),
+               relayServer: relayCtrl.text.trim(),
+               apiServer: apiCtrl.text.trim(),
+-              key: keyCtrl.text.trim()));
++              key: keyCtrl.text.trim(),
++              discoveryUrl: discoveryCtrl.text.trim()));
+       setState(() {
+         isInProgress = false;
+       });
+@@ -151,7 +154,12 @@ void showServerSettingsWithValue(
+         ],
+       ),
+       content: ConstrainedBox(
+-        constraints: const BoxConstraints(minWidth: 500),
++        constraints: BoxConstraints(
++          minWidth: 500,
++          // Without a height bound AlertDialog stretches a one-field form to the
++          // whole window, which shows up as a large blank area under the field.
++          maxHeight: isDesktop || isWeb ? 160 : double.infinity,
++        ),
+         child: Form(
+           child: Obx(() => Column(
+                 mainAxisSize: MainAxisSize.min,
+@@ -191,6 +199,7 @@ void showServerSettingsWithValue(
+                   ),
+                   SizedBox(height: 8),
+                   buildField('Key', keyCtrl, ''),
++
+                   if (isInProgress)
+                     Padding(
+                       padding: EdgeInsets.only(top: 8),
+@@ -273,3 +282,116 @@ void setPrivacyModeDialog(
+     );
+   }, backDismiss: true, clickMaskDismiss: true);
+ }
++
++void showDiscoveryUrlDialog(
++    OverlayDialogManager dialogManager, void Function(VoidCallback) setState) async {
++  final options = await bind.mainGetOptions();
++  String current = '';
++  try {
++    final map = jsonDecode(options);
++    current = (map['discovery-url'] ?? '') as String;
++  } catch (e) {
++    debugPrint('Invalid options: $e');
++  }
++  showDiscoveryUrlDialogWithValue(current, dialogManager, setState);
++}
++
++void showDiscoveryUrlDialogWithValue(
++    String current, OverlayDialogManager dialogManager, void Function(VoidCallback)? upSetState) {
++  const labelWidth = 120.0;
++  const labelSpacing = 8.0;
++  final urlCtrl = TextEditingController(text: current);
++  final errMsg = ''.obs;
++  dialogManager.show((setState, close, context) {
++    urlCtrl.addListener(() => setState(() {}));
++    Future<bool> submit() async {
++      final value = urlCtrl.text.trim();
++      if (value.isNotEmpty &&
++          !value.startsWith('https://') &&
++          !value.startsWith('http://')) {
++        errMsg.value = translate('invalid_http');
++        return false;
++      }
++      await bind.mainSetOption(key: 'discovery-url', value: value);
++      return true;
++    }
++
++    Widget field() {
++      final input = serverSettingsTextFormField(
++        label: translate('Discovery URL'),
++        controller: urlCtrl,
++        errorMsg: errMsg.value,
++        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
++        showLabelText: !(isDesktop || isWeb),
++        autofocus: true,
++      ).workaroundFreezeLinuxMint();
++      if (isDesktop || isWeb) {
++        return Row(
++          children: [
++            SizedBox(
++              width: labelWidth,
++              child: Text(translate('Discovery URL')),
++            ),
++            SizedBox(width: labelSpacing),
++            Expanded(child: input),
++          ],
++        );
++      }
++      return input;
++    }
++
++    return CustomAlertDialog(
++      title: Text(translate('Discovery URL')),
++      content: ConstrainedBox(
++        constraints: const BoxConstraints(minWidth: 500),
++        child: Form(
++          child: Obx(() => Column(
++                mainAxisSize: MainAxisSize.min,
++                crossAxisAlignment: CrossAxisAlignment.start,
++                children: [
++                  field(),
++                  Padding(
++                    padding: EdgeInsetsDirectional.only(
++                      start: isDesktop || isWeb ? labelWidth + labelSpacing : 0,
++                      top: 6,
++                    ),
++                    child: Text(
++                      translate('discovery_url_tip'),
++                      style: const TextStyle(fontSize: 12, color: Colors.grey),
++                    ),
++                  ),
++                  if (urlCtrl.text.trim().startsWith('http://'))
++                    Padding(
++                      padding: EdgeInsetsDirectional.only(
++                        start:
++                            isDesktop || isWeb ? labelWidth + labelSpacing : 0,
++                        top: 4,
++                      ),
++                      child: Text(
++                        translate('discovery_url_insecure_tip'),
++                        style:
++                            const TextStyle(fontSize: 12, color: Colors.orange),
++                      ),
++                    ),
++                ],
++              )),
++        ),
++      ),
++      actions: [
++        dialogButton('Cancel', onPressed: () {
++          close();
++        }, isOutline: true),
++        dialogButton(
++          'OK',
++          onPressed: () async {
++            if (await submit()) {
++              close();
++              showToast(translate('Successful'));
++              upSetState?.call(() {});
++            }
++          },
++        ),
++      ],
++    );
++  });
++}
+diff --git a/src/common.rs b/src/common.rs
+index 53831cc5f..bb96bb57e 100644
+--- a/src/common.rs
++++ b/src/common.rs
+@@ -1277,6 +1277,9 @@ fn get_api_server_(api: String, custom: String) -> String {
+             return lic.api.clone();
+         }
+     }
++    if let Some(api_server) = crate::discovery::api_server() {
++        return api_server;
++    }
+     if !api.is_empty() {
+         return api.to_owned();
+     }
+@@ -2148,6 +2151,9 @@ pub async fn get_key(sync: bool) -> String {
+             return lic.key;
+         }
+     }
++    if let Some(key) = crate::discovery::key() {
++        return key;
++    }
+     #[cfg(target_os = "ios")]
+     let mut key = Config::get_option("key");
+     #[cfg(not(target_os = "ios"))]
+@@ -2443,6 +2449,9 @@ pub fn create_symmetric_key_msg(their_pk_b: [u8; 32]) -> (Bytes, Bytes, secretbo
+ 
+ #[inline]
+ pub fn using_public_server() -> bool {
++    if let Some(id_server) = crate::discovery::id_server() {
++        return id_server.is_empty();
++    }
+     crate::get_custom_rendezvous_server(get_option("custom-rendezvous-server")).is_empty()
+ }
+ 
+diff --git a/src/discovery.rs b/src/discovery.rs
+new file mode 100644
+index 000000000..a1ff1ebba
+--- /dev/null
++++ b/src/discovery.rs
+@@ -0,0 +1,407 @@
++use std::{
++    io::Read,
++    sync::Mutex,
++    time::{Duration, Instant},
++};
++
++use hbb_common::{
++    config::{Config, EXE_RENDEZVOUS_SERVER},
++    log, tokio,
++};
++
++/// How often [`watch`] compares the saved endpoint against the one already applied.
++const WATCH_INTERVAL: std::time::Duration = std::time::Duration::from_secs(2);
++
++/// Option holding the discovery endpoint. Empty means the feature is off.
++pub const OPTION_DISCOVERY_URL: &str = "discovery-url";
++
++const CACHE_TTL: Duration = Duration::from_secs(60);
++const FETCH_TIMEOUT: Duration = Duration::from_secs(3);
++const MAX_BODY_BYTES: u64 = 64 * 1024;
++const KEY_LEN: usize = 44;
++
++/// Servers announced by the discovery endpoint. An empty field is "not announced".
++#[derive(Clone, Debug, Default, PartialEq, Eq)]
++struct Discovered {
++    id_server: String,
++    relay_server: String,
++    api_server: String,
++    key: String,
++}
++
++impl Discovered {
++    fn is_empty(&self) -> bool {
++        self.id_server.is_empty()
++            && self.relay_server.is_empty()
++            && self.api_server.is_empty()
++            && self.key.is_empty()
++    }
++}
++
++struct Cache {
++    last_attempt: Option<Instant>,
++    last_url: String,
++    value: Option<Discovered>,
++}
++
++static CACHE: Mutex<Cache> = Mutex::new(Cache {
++    last_attempt: None,
++    last_url: String::new(),
++    value: None,
++});
++
++/// What the callers below hand out right now. Nothing here is persisted: the values the user
++/// typed stay in the config file and take over again as soon as discovery stops answering.
++struct State {
++    active: Discovered,
++    /// The executable level rendezvous server we replaced, kept to put it back on reset.
++    previous_exe_server: Option<String>,
++}
++
++static STATE: Mutex<State> = Mutex::new(State {
++    active: Discovered {
++        id_server: String::new(),
++        relay_server: String::new(),
++        api_server: String::new(),
++        key: String::new(),
++    },
++    previous_exe_server: None,
++});
++
++/// Watches `discovery-url` and applies a change the moment it happens.
++///
++/// The connect loop only reads the endpoint when it (re)starts, so without this a saved address
++/// would idle until something else forced a reconnect. Polling the option keeps the hook out of
++/// the FFI layer, which changes often upstream.
++pub fn watch() {
++    static STARTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
++    if STARTED.swap(true, std::sync::atomic::Ordering::SeqCst) {
++        return;
++    }
++    tokio::spawn(async {
++        let mut seen = Config::get_option(OPTION_DISCOVERY_URL).trim().to_owned();
++        loop {
++            tokio::time::sleep(WATCH_INTERVAL).await;
++            let current = Config::get_option(OPTION_DISCOVERY_URL).trim().to_owned();
++            if current == seen {
++                continue;
++            }
++            log::info!("discovery: endpoint changed, applying");
++            seen = current;
++            sync().await;
++            crate::rendezvous_mediator::RendezvousMediator::restart();
++        }
++    });
++}
++
++/// Injects the discovered servers into the runtime config when `discovery-url` is set.
++///
++/// Called by the rendezvous mediator once at startup and again before every reconnect, so it has
++/// to stay cheap: a fresh cache only re-applies, a stale one fetches on a blocking worker bounded
++/// by [`FETCH_TIMEOUT`]. A failed fetch keeps the previous answer, and with no previous answer the
++/// manual configuration stays in place.
++pub async fn sync() {
++    let url = Config::get_option(OPTION_DISCOVERY_URL);
++    let url = url.trim().to_owned();
++    if url.is_empty() {
++        if !STATE.lock().unwrap().is_active() {
++            log::trace!("discovery: no endpoint configured");
++            return;
++        }
++        log::info!("discovery: endpoint cleared, back to the manual settings");
++        apply(None);
++        return;
++    }
++    {
++        let mut cache = CACHE.lock().unwrap();
++        if cache.last_url != url {
++            cache.last_url = url.clone();
++            cache.last_attempt = None;
++        }
++        if let Some(at) = cache.last_attempt {
++            if at.elapsed() < CACHE_TTL {
++                let cached = cache.value.clone();
++                drop(cache);
++                apply(cached.as_ref());
++                return;
++            }
++        }
++    }
++    let fetched = match tokio::task::spawn_blocking({
++        let url = url.clone();
++        move || fetch(&url)
++    })
++    .await
++    {
++        Ok(result) => result,
++        Err(err) => Err(format!("worker failed: {err}")),
++    };
++    let cached = {
++        let mut cache = CACHE.lock().unwrap();
++        cache.last_attempt = Some(Instant::now());
++        match fetched {
++            Ok(value) => cache.value = Some(value),
++            Err(err) => log::warn!("discovery: {url}: {err}"),
++        }
++        cache.value.clone()
++    };
++    apply(cached.as_ref());
++}
++
++/// Whether the rendezvous server in use comes from the endpoint rather than the manual setting.
++pub fn id_server() -> Option<String> {
++    non_empty(STATE.lock().unwrap().active.id_server.clone())
++}
++
++/// The announced API server, when it is currently overridden.
++pub fn api_server() -> Option<String> {
++    non_empty(STATE.lock().unwrap().active.api_server.clone())
++}
++
++/// The announced relay server, when it is currently overridden.
++pub fn relay_server() -> Option<String> {
++    non_empty(STATE.lock().unwrap().active.relay_server.clone())
++}
++
++/// The announced public key, when it is currently overridden.
++pub fn key() -> Option<String> {
++    non_empty(STATE.lock().unwrap().active.key.clone())
++}
++
++fn non_empty(value: String) -> Option<String> {
++    if value.is_empty() {
++        None
++    } else {
++        Some(value)
++    }
++}
++
++impl State {
++    fn is_active(&self) -> bool {
++        !self.active.is_empty() || self.previous_exe_server.is_some()
++    }
++}
++
++fn apply(value: Option<&Discovered>) {
++    let mut state = STATE.lock().unwrap();
++    match value {
++        Some(value) => apply_value(&mut state, value),
++        None => restore(&mut state),
++    }
++}
++
++fn apply_value(state: &mut State, value: &Discovered) {
++    if !value.id_server.is_empty() {
++        if state.previous_exe_server.is_none() {
++            state.previous_exe_server = Some(EXE_RENDEZVOUS_SERVER.read().unwrap().clone());
++        }
++        let mut exe_rendezvous_server = EXE_RENDEZVOUS_SERVER.write().unwrap();
++        if *exe_rendezvous_server != value.id_server {
++            log::info!("discovery: rendezvous server set to {}", value.id_server);
++            *exe_rendezvous_server = value.id_server.clone();
++        }
++    }
++    for (announced, applied, option) in [
++        (&value.relay_server, &state.active.relay_server, "relay-server"),
++        (&value.api_server, &state.active.api_server, "api-server"),
++        (&value.key, &state.active.key, "key"),
++    ] {
++        if !announced.is_empty() && announced != applied {
++            log::info!("discovery: {option} set to {announced}");
++        }
++    }
++    state.active = value.clone();
++}
++
++fn restore(state: &mut State) {
++    if let Some(previous) = state.previous_exe_server.take() {
++        let mut exe_rendezvous_server = EXE_RENDEZVOUS_SERVER.write().unwrap();
++        if *exe_rendezvous_server != previous {
++            log::info!("discovery: rendezvous server restored to {previous:?}");
++            *exe_rendezvous_server = previous;
++        }
++    }
++    state.active = Discovered::default();
++}
++
++fn fetch(url: &str) -> Result<Discovered, String> {
++    if !url.starts_with("https://") {
++        log::warn!("discovery: {url} is not an https address");
++    }
++    // Reuse the app's client so the TLS backend matches the rest of the client and the
++    // per-host probe cache is shared. A plain HTTP endpoint takes the Plain path.
++    let client = crate::hbbs_http::create_http_client_with_url(url);
++    let resp = client
++        .get(url)
++        .timeout(FETCH_TIMEOUT)
++        .send()
++        .map_err(|err| err.to_string())?;
++    let status = resp.status();
++    if !status.is_success() {
++        return Err(format!("http status {status}"));
++    }
++    let mut body = Vec::new();
++    resp.take(MAX_BODY_BYTES)
++        .read_to_end(&mut body)
++        .map_err(|err| err.to_string())?;
++    if body.len() as u64 >= MAX_BODY_BYTES {
++        log::warn!("discovery: response truncated at {MAX_BODY_BYTES} bytes");
++    }
++    parse_body(&String::from_utf8_lossy(&body)).ok_or_else(|| "unusable response".to_owned())
++}
++
++/// JSON (`{...}`) or plain text whose first non-empty line is the ID server.
++fn parse_body(body: &str) -> Option<Discovered> {
++    let body = body.trim_start_matches('\u{feff}').trim();
++    if body.is_empty() {
++        return None;
++    }
++    if !body.starts_with('{') {
++        let id_server = body.lines().map(str::trim).find(|line| !line.is_empty())?;
++        return if is_plausible_server(id_server) {
++            Some(Discovered {
++                id_server: id_server.to_owned(),
++                ..Default::default()
++            })
++        } else {
++            None
++        };
++    }
++    let value: serde_json::Value = serde_json::from_str(body).ok()?;
++    let field = |name: &str| {
++        value
++            .get(name)
++            .and_then(|field| field.as_str())
++            .unwrap_or_default()
++            .trim()
++            .to_owned()
++    };
++    let mut discovered = Discovered {
++        id_server: field("id_server"),
++        relay_server: field("relay_server"),
++        api_server: field("api_server"),
++        key: field("key"),
++    };
++    if !is_plausible_server(&discovered.id_server) {
++        log::warn!("discovery: response has no usable id_server");
++        return None;
++    }
++    if !discovered.key.is_empty() && !is_valid_key(&discovered.key) {
++        log::warn!("discovery: ignoring malformed key");
++        discovered.key.clear();
++    }
++    Some(discovered)
++}
++
++/// `host:port`, or a bare host that upstream completes with the default port.
++fn is_plausible_server(server: &str) -> bool {
++    !server.is_empty() && !server.contains(char::is_whitespace) && !server.contains('/')
++}
++
++/// A RustDesk public key is base64 of a 32 byte key, so 44 characters with padding.
++fn is_valid_key(key: &str) -> bool {
++    key.len() == KEY_LEN
++        && key.ends_with('=')
++        && key
++            .bytes()
++            .all(|b| b.is_ascii_alphanumeric() || b == b'+' || b == b'/' || b == b'=')
++}
++
++#[cfg(test)]
++mod tests {
++    use super::{is_valid_key, parse_body, Discovered};
++
++    fn id_only(id_server: &str) -> Discovered {
++        Discovered {
++            id_server: id_server.to_owned(),
++            ..Default::default()
++        }
++    }
++
++    #[test]
++    fn parse_json_with_all_fields() {
++        let body = r#"{
++            "id_server": "119.1.189.42:23456",
++            "relay_server": "119.1.189.42:23457",
++            "api_server": "http://119.1.189.42:21114",
++            "key": "OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw="
++        }"#;
++        assert_eq!(
++            parse_body(body),
++            Some(Discovered {
++                id_server: "119.1.189.42:23456".to_owned(),
++                relay_server: "119.1.189.42:23457".to_owned(),
++                api_server: "http://119.1.189.42:21114".to_owned(),
++                key: "OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=".to_owned(),
++            })
++        );
++    }
++
++    #[test]
++    fn parse_json_passes_api_server_through_untouched() {
++        let parsed =
++            parse_body(r#"{"id_server": "a:1", "api_server": "https://api.example.com/"}"#)
++                .unwrap();
++        assert_eq!(parsed.api_server, "https://api.example.com/");
++    }
++
++    #[test]
++    fn parse_json_without_optional_fields_leaves_them_empty() {
++        let parsed = parse_body(r#"{"id_server": "a:1"}"#).unwrap();
++        assert_eq!(parsed, id_only("a:1"));
++    }
++
++    #[test]
++    fn parse_json_drops_empty_and_malformed_key() {
++        for body in [
++            r#"{"id_server": "a:1", "key": ""}"#,
++            r#"{"id_server": "a:1", "key": "not-a-key"}"#,
++            r#"{"id_server": "a:1", "key": "OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw"}"#,
++        ] {
++            assert_eq!(parse_body(body).unwrap().key, "");
++        }
++    }
++
++    #[test]
++    fn parse_json_requires_id_server() {
++        assert_eq!(parse_body(r#"{"relay_server": "b:2"}"#), None);
++        assert_eq!(parse_body(r#"{"id_server": ""}"#), None);
++    }
++
++    #[test]
++    fn parse_invalid_json_fails() {
++        assert_eq!(parse_body(r#"{"id_server": "a:1""#), None);
++        assert_eq!(parse_body(r#"{"id_server": "a b"}"#), None);
++    }
++
++    #[test]
++    fn parse_plain_text_uses_first_line() {
++        assert_eq!(
++            parse_body("119.1.189.42:23456
++"),
++            Some(id_only("119.1.189.42:23456"))
++        );
++        assert_eq!(
++            parse_body("
++  119.1.189.42:23456  
++119.1.189.42:23457
++"),
++            Some(id_only("119.1.189.42:23456"))
++        );
++    }
++
++    #[test]
++    fn parse_empty_body_fails() {
++        assert_eq!(parse_body(""), None);
++        assert_eq!(parse_body("  
++	
++"), None);
++    }
++
++    #[test]
++    fn key_must_be_base64_of_32_bytes() {
++        assert!(is_valid_key("OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw="));
++        assert!(!is_valid_key("OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw"));
++        assert!(!is_valid_key("OeVuKk5nlHiXp APNn0Y3pC1Iwpwn44JGqrQCsWqmBw="));
++    }
++}
+diff --git a/src/lang/ar.rs b/src/lang/ar.rs
+index 1ebc7c757..fde0fe00a 100644
+--- a/src/lang/ar.rs
++++ b/src/lang/ar.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "الرجاء اختيار Android → media."),
+         ("Trust duration (days)", "مدة الثقة (بالأيام)"),
+         ("Renew trust", "تجديد الثقة"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/az.rs b/src/lang/az.rs
+index 714f4110f..8d6f4b497 100644
+--- a/src/lang/az.rs
++++ b/src/lang/az.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Zəhmət olmasa, Android → media seçin."),
+         ("Trust duration (days)", "Etibar müddəti (gün)"),
+         ("Renew trust", "Etibarı yenilə"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/be.rs b/src/lang/be.rs
+index cadc4e797..e484bf5a4 100644
+--- a/src/lang/be.rs
++++ b/src/lang/be.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Выберыце Android → media."),
+         ("Trust duration (days)", "Тэрмін даверу (у днях)"),
+         ("Renew trust", "Падоўжыць давер"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/bg.rs b/src/lang/bg.rs
+index c8ed6cf42..4fb0b2a43 100644
+--- a/src/lang/bg.rs
++++ b/src/lang/bg.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Моля, изберете Android → media."),
+         ("Trust duration (days)", "Срок на доверие (дни)"),
+         ("Renew trust", "Подновяване на доверието"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ca.rs b/src/lang/ca.rs
+index d8b7dfc14..4077847d0 100644
+--- a/src/lang/ca.rs
++++ b/src/lang/ca.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Seleccioneu Android → media."),
+         ("Trust duration (days)", "Durada de la confiança (dies)"),
+         ("Renew trust", "Renova la confiança"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/cn.rs b/src/lang/cn.rs
+index 98e97631f..1135ac555 100644
+--- a/src/lang/cn.rs
++++ b/src/lang/cn.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "请选择 Android → media。"),
+         ("Trust duration (days)", "信任有效期（天）"),
+         ("Renew trust", "延长信任有效期"),
++        ("Discovery URL", "发现服务地址"),
++        ("discovery_url_tip", "留空则不启用。填写后，服务器地址与密钥将由该地址下发，变化时自动跟随。"),
++        ("discovery_url_insecure_tip", "该地址使用明文 HTTP，网络上的其他人可以看到并篡改返回内容。除非你信任当前网络，否则请使用 HTTPS。"),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/cs.rs b/src/lang/cs.rs
+index 721051999..e9d51866a 100644
+--- a/src/lang/cs.rs
++++ b/src/lang/cs.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Vyberte prosím Android → media."),
+         ("Trust duration (days)", "Doba důvěry (dny)"),
+         ("Renew trust", "Obnovit důvěru"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/da.rs b/src/lang/da.rs
+index e3ed60033..62cbcb909 100644
+--- a/src/lang/da.rs
++++ b/src/lang/da.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Vælg Android → media."),
+         ("Trust duration (days)", "Tillidsperiode (dage)"),
+         ("Renew trust", "Forny tillid"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/de.rs b/src/lang/de.rs
+index a03e3a260..64f555ce7 100644
+--- a/src/lang/de.rs
++++ b/src/lang/de.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Bitte wählen Sie Android → media."),
+         ("Trust duration (days)", "Vertrauensdauer (Tage)"),
+         ("Renew trust", "Vertrauen erneuern"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/el.rs b/src/lang/el.rs
+index 1a5799e83..d3cfa99da 100644
+--- a/src/lang/el.rs
++++ b/src/lang/el.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Παρακαλώ επιλέξτε Android → media."),
+         ("Trust duration (days)", "Διάρκεια εμπιστοσύνης (ημέρες)"),
+         ("Renew trust", "Ανανέωση εμπιστοσύνης"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/en.rs b/src/lang/en.rs
+index f3c654f0f..3dc1cc4a5 100644
+--- a/src/lang/en.rs
++++ b/src/lang/en.rs
+@@ -291,5 +291,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("api_server_connection_tip", "Your custom server uses unencrypted HTTP. Contact your administrator to enable HTTPS."),
+         ("api_server_empty_tip", "With API Server empty, your custom server defaults to HTTP. Contact your administrator to enable HTTPS."),
+         ("android-logs-folder-tip", "Choose Android → media to store log files."),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", "Leave empty to disable. When set, the ID server, relay server, API server and key follow this address automatically."),
++        ("discovery_url_insecure_tip", "This address uses plain HTTP, so anyone on the network can see and change what it returns. Use HTTPS unless you trust this network."),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/eo.rs b/src/lang/eo.rs
+index fccb8616f..10fed3917 100644
+--- a/src/lang/eo.rs
++++ b/src/lang/eo.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Bonvolu elekti Android → media."),
+         ("Trust duration (days)", "Daŭro de fido (tagoj)"),
+         ("Renew trust", "Renovigi fidon"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/es.rs b/src/lang/es.rs
+index ff9127d1b..e3e662d17 100644
+--- a/src/lang/es.rs
++++ b/src/lang/es.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Seleccione Android → media."),
+         ("Trust duration (days)", "Duración de la confianza (días)"),
+         ("Renew trust", "Renovar confianza"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/et.rs b/src/lang/et.rs
+index a7d8980ef..6e07c60c1 100644
+--- a/src/lang/et.rs
++++ b/src/lang/et.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Palun vali Android → media."),
+         ("Trust duration (days)", "Usalduse kestus (päevades)"),
+         ("Renew trust", "Uuenda usaldust"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/eu.rs b/src/lang/eu.rs
+index dc00c810a..2b378ae70 100644
+--- a/src/lang/eu.rs
++++ b/src/lang/eu.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Hautatu Android → media."),
+         ("Trust duration (days)", "Konfiantzaren iraupena (egunak)"),
+         ("Renew trust", "Berritu konfiantza"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/fa.rs b/src/lang/fa.rs
+index 66d5dc79c..20d5f9c8f 100644
+--- a/src/lang/fa.rs
++++ b/src/lang/fa.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "لطفاً Android → media را انتخاب کنید."),
+         ("Trust duration (days)", "مدت اعتماد (روز)"),
+         ("Renew trust", "تمدید اعتماد"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/fi.rs b/src/lang/fi.rs
+index d4277de0f..96f932e03 100644
+--- a/src/lang/fi.rs
++++ b/src/lang/fi.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Valitse Android → media."),
+         ("Trust duration (days)", "Luottamuksen kesto (päivää)"),
+         ("Renew trust", "Jatka luottamusta"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/fr.rs b/src/lang/fr.rs
+index 72376b909..03283592e 100644
+--- a/src/lang/fr.rs
++++ b/src/lang/fr.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Veuillez sélectionner Android → media."),
+         ("Trust duration (days)", "Durée de confiance (jours)"),
+         ("Renew trust", "Renouveler la confiance"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ge.rs b/src/lang/ge.rs
+index fe76e3551..f9233703e 100644
+--- a/src/lang/ge.rs
++++ b/src/lang/ge.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "გთხოვთ, აირჩიოთ Android → media."),
+         ("Trust duration (days)", "ნდობის ხანგრძლივობა (დღე)"),
+         ("Renew trust", "ნდობის განახლება"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/gl.rs b/src/lang/gl.rs
+index 1cade2857..6b9a8b3a0 100644
+--- a/src/lang/gl.rs
++++ b/src/lang/gl.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Selecciona Android → media."),
+         ("Trust duration (days)", "Duración da confianza (días)"),
+         ("Renew trust", "Renovar a confianza"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/gu.rs b/src/lang/gu.rs
+index c73cdb5b5..36e50aa49 100644
+--- a/src/lang/gu.rs
++++ b/src/lang/gu.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "કૃપા કરીને Android → media પસંદ કરો."),
+         ("Trust duration (days)", "વિશ્વાસ અવધિ (દિવસો)"),
+         ("Renew trust", "વિશ્વાસ નવીકરણ કરો"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/he.rs b/src/lang/he.rs
+index 102a129bc..a74e7e650 100644
+--- a/src/lang/he.rs
++++ b/src/lang/he.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "אנא בחר Android → media."),
+         ("Trust duration (days)", "משך האמון (ימים)"),
+         ("Renew trust", "חידוש אמון"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/hi.rs b/src/lang/hi.rs
+index ce5dc2140..b1bd7b99a 100644
+--- a/src/lang/hi.rs
++++ b/src/lang/hi.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "कृपया Android → media चुनें।"),
+         ("Trust duration (days)", "विश्वास अवधि (दिन)"),
+         ("Renew trust", "विश्वास नवीनीकृत करें"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/hr.rs b/src/lang/hr.rs
+index bef672007..4b8e97529 100644
+--- a/src/lang/hr.rs
++++ b/src/lang/hr.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Odaberite Android → media."),
+         ("Trust duration (days)", "Trajanje povjerenja (dani)"),
+         ("Renew trust", "Obnovi povjerenje"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/hu.rs b/src/lang/hu.rs
+index 145914e3c..e1e3b2394 100644
+--- a/src/lang/hu.rs
++++ b/src/lang/hu.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Válassza az Android → media mappát."),
+         ("Trust duration (days)", "Megbízhatóság időtartama (nap)"),
+         ("Renew trust", "Megbízhatóság megújítása"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/id.rs b/src/lang/id.rs
+index 364d542fc..0c0166b07 100644
+--- a/src/lang/id.rs
++++ b/src/lang/id.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Silakan pilih Android → media."),
+         ("Trust duration (days)", "Durasi kepercayaan (hari)"),
+         ("Renew trust", "Perbarui kepercayaan"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/it.rs b/src/lang/it.rs
+index 42d74e8a8..c3a11dd95 100644
+--- a/src/lang/it.rs
++++ b/src/lang/it.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Seleziona Android → media."),
+         ("Trust duration (days)", "Durata attendibilità (giorni)"),
+         ("Renew trust", "Rinnova attendibilità"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ja.rs b/src/lang/ja.rs
+index 3239326c0..bed007f1c 100644
+--- a/src/lang/ja.rs
++++ b/src/lang/ja.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Android → media を選択してください。"),
+         ("Trust duration (days)", "信頼期間 (日)"),
+         ("Renew trust", "信頼を更新"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ko.rs b/src/lang/ko.rs
+index 490e780e1..e39efb188 100644
+--- a/src/lang/ko.rs
++++ b/src/lang/ko.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Android → media를 선택해 주시기 바랍니다."),
+         ("Trust duration (days)", "신뢰 유지 기간 (일)"),
+         ("Renew trust", "신뢰 갱신"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/kz.rs b/src/lang/kz.rs
+index 9dbdf611f..d0742f3b4 100644
+--- a/src/lang/kz.rs
++++ b/src/lang/kz.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Android → media таңдаңыз."),
+         ("Trust duration (days)", "Сенім мерзімі (күн)"),
+         ("Renew trust", "Сенімді жаңарту"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/lt.rs b/src/lang/lt.rs
+index bd4f1ce6c..214731326 100644
+--- a/src/lang/lt.rs
++++ b/src/lang/lt.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Pasirinkite Android → media."),
+         ("Trust duration (days)", "Pasitikėjimo trukmė (dienomis)"),
+         ("Renew trust", "Atnaujinti pasitikėjimą"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/lv.rs b/src/lang/lv.rs
+index f00b2fe4a..f22d6e791 100644
+--- a/src/lang/lv.rs
++++ b/src/lang/lv.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Lūdzu, atlasiet Android → media."),
+         ("Trust duration (days)", "Uzticēšanās ilgums (dienas)"),
+         ("Renew trust", "Atjaunot uzticēšanos"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ml.rs b/src/lang/ml.rs
+index e5be24a38..6a18997dd 100644
+--- a/src/lang/ml.rs
++++ b/src/lang/ml.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "ദയവായി Android → media തിരഞ്ഞെടുക്കുക."),
+         ("Trust duration (days)", "വിശ്വാസ കാലാവധി (ദിവസം)"),
+         ("Renew trust", "വിശ്വാസം പുതുക്കുക"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/nb.rs b/src/lang/nb.rs
+index 33ef45e7e..5ac8c1280 100644
+--- a/src/lang/nb.rs
++++ b/src/lang/nb.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Velg Android → media."),
+         ("Trust duration (days)", "Klareringsperiode (dager)"),
+         ("Renew trust", "Forny klarering"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/nl.rs b/src/lang/nl.rs
+index e5dad3719..61cebe82e 100644
+--- a/src/lang/nl.rs
++++ b/src/lang/nl.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Selecteer Android → media."),
+         ("Trust duration (days)", "Vertrouwensperiode (dagen)"),
+         ("Renew trust", "Vertrouwen hernieuwen"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/pl.rs b/src/lang/pl.rs
+index 192c36604..c838037e0 100644
+--- a/src/lang/pl.rs
++++ b/src/lang/pl.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Wybierz Android → media."),
+         ("Trust duration (days)", "Okres zaufania (dni)"),
+         ("Renew trust", "Odnów zaufanie"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/pt_BR.rs b/src/lang/pt_BR.rs
+index 7008ac620..a5e8b736b 100644
+--- a/src/lang/pt_BR.rs
++++ b/src/lang/pt_BR.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Selecione Android → media."),
+         ("Trust duration (days)", "Duração da confiança (dias)"),
+         ("Renew trust", "Renovar confiança"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/pt_PT.rs b/src/lang/pt_PT.rs
+index 1adcb6e7e..f7f1bd14c 100644
+--- a/src/lang/pt_PT.rs
++++ b/src/lang/pt_PT.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Por favor selecione Android → media."),
+         ("Trust duration (days)", "Duração da confiança (dias)"),
+         ("Renew trust", "Renovar confiança"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ro.rs b/src/lang/ro.rs
+index 05cce6ab8..545ea799d 100644
+--- a/src/lang/ro.rs
++++ b/src/lang/ro.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Selectează Android → media."),
+         ("Trust duration (days)", "Durata încrederii (zile)"),
+         ("Renew trust", "Reînnoiește încrederea"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ru.rs b/src/lang/ru.rs
+index dc7757219..3e3302bcd 100644
+--- a/src/lang/ru.rs
++++ b/src/lang/ru.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Выберите Android → media."),
+         ("Trust duration (days)", "Срок доверия (в днях)"),
+         ("Renew trust", "Продлить доверие"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/sc.rs b/src/lang/sc.rs
+index f17608d4d..5cdc00438 100644
+--- a/src/lang/sc.rs
++++ b/src/lang/sc.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Seletziona Android → media."),
+         ("Trust duration (days)", "Durada de sa fidùtzia (dies)"),
+         ("Renew trust", "Annoa sa fidùtzia"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/sk.rs b/src/lang/sk.rs
+index 7d5faf167..a80d6a0c1 100644
+--- a/src/lang/sk.rs
++++ b/src/lang/sk.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Vyberte Android → media."),
+         ("Trust duration (days)", "Doba dôvery (dni)"),
+         ("Renew trust", "Obnoviť dôveru"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/sl.rs b/src/lang/sl.rs
+index 1107246c7..832aa6df4 100644
+--- a/src/lang/sl.rs
++++ b/src/lang/sl.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Izberite Android → media."),
+         ("Trust duration (days)", "Trajanje zaupanja (dni)"),
+         ("Renew trust", "Obnovi zaupanje"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/sq.rs b/src/lang/sq.rs
+index 3d329af4c..e35d7e520 100644
+--- a/src/lang/sq.rs
++++ b/src/lang/sq.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Ju lutemi zgjidhni Android → media."),
+         ("Trust duration (days)", "Kohëzgjatja e besimit (ditë)"),
+         ("Renew trust", "Rinovo besimin"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/sr.rs b/src/lang/sr.rs
+index def1efeb8..772de5e6f 100644
+--- a/src/lang/sr.rs
++++ b/src/lang/sr.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Izaberite Android → media."),
+         ("Trust duration (days)", "Trajanje poverenja (dani)"),
+         ("Renew trust", "Obnovi poverenje"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/sv.rs b/src/lang/sv.rs
+index 5aad93760..cae3c5668 100644
+--- a/src/lang/sv.rs
++++ b/src/lang/sv.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Välj Android → media."),
+         ("Trust duration (days)", "Förtroendeperiod (dagar)"),
+         ("Renew trust", "Förnya förtroende"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ta.rs b/src/lang/ta.rs
+index 51ba9f8bc..cac3f4801 100644
+--- a/src/lang/ta.rs
++++ b/src/lang/ta.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Android → media என்பதைத் தேர்ந்தெடுக்கவும்."),
+         ("Trust duration (days)", "நம்பிக்கைக் காலம் (நாட்கள்)"),
+         ("Renew trust", "நம்பிக்கையைப் புதுப்பி"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/template.rs b/src/lang/template.rs
+index 0ca3c660b..8f4a7f35f 100644
+--- a/src/lang/template.rs
++++ b/src/lang/template.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", ""),
+         ("Trust duration (days)", ""),
+         ("Renew trust", ""),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/th.rs b/src/lang/th.rs
+index 14deca923..3ca8e9bb8 100644
+--- a/src/lang/th.rs
++++ b/src/lang/th.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "กรุณาเลือก Android → media"),
+         ("Trust duration (days)", "ระยะเวลาการเชื่อถือ (วัน)"),
+         ("Renew trust", "ต่ออายุการเชื่อถือ"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/tr.rs b/src/lang/tr.rs
+index 44dd56e7e..83c845db0 100644
+--- a/src/lang/tr.rs
++++ b/src/lang/tr.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Lütfen Android → media konumunu seçin."),
+         ("Trust duration (days)", "Güven süresi (gün)"),
+         ("Renew trust", "Güveni yenile"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/tw.rs b/src/lang/tw.rs
+index 793e8d0b1..d0521e09a 100644
+--- a/src/lang/tw.rs
++++ b/src/lang/tw.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "請選擇 Android → media。"),
+         ("Trust duration (days)", "信任有效期（天）"),
+         ("Renew trust", "延長信任期限"),
++        ("Discovery URL", "發現服務位址"),
++        ("discovery_url_tip", "留空則不啟用。填寫後，伺服器位址與金鑰將由該位址下發，變化時自動跟隨。"),
++        ("discovery_url_insecure_tip", "該位址使用明文 HTTP，網路上的其他人可以看到並竄改回傳內容。除非你信任目前網路，否則請使用 HTTPS。"),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/uk.rs b/src/lang/uk.rs
+index 5a3a3f7fc..b8293a711 100644
+--- a/src/lang/uk.rs
++++ b/src/lang/uk.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Будь ласка, виберіть Android → media."),
+         ("Trust duration (days)", "Термін довіри (у днях)"),
+         ("Renew trust", "Подовжити довіру"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/ur.rs b/src/lang/ur.rs
+index ad2f10513..e047d212d 100644
+--- a/src/lang/ur.rs
++++ b/src/lang/ur.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "براہ کرم Android → media منتخب کریں۔"),
+         ("Trust duration (days)", "اعتماد کی مدت (دن)"),
+         ("Renew trust", "اعتماد کی تجدید کریں"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lang/vi.rs b/src/lang/vi.rs
+index a51fd0473..66b1ffdb7 100644
+--- a/src/lang/vi.rs
++++ b/src/lang/vi.rs
+@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
+         ("Please select Android → media.", "Vui lòng chọn Android → media."),
+         ("Trust duration (days)", "Thời hạn tin cậy (ngày)"),
+         ("Renew trust", "Gia hạn tin cậy"),
++        ("Discovery URL", ""),
++        ("discovery_url_tip", ""),
++        ("discovery_url_insecure_tip", ""),
+     ].iter().cloned().collect();
+ }
+diff --git a/src/lib.rs b/src/lib.rs
+index f6e48a1be..590b35e01 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -49,6 +49,7 @@ mod clipboard;
+ #[cfg(not(any(target_os = "android", target_os = "ios")))]
+ pub mod core_main;
+ mod custom_server;
++mod discovery;
+ mod lang;
+ #[cfg(not(any(target_os = "android", target_os = "ios")))]
+ mod port_forward;
+diff --git a/src/rendezvous_mediator.rs b/src/rendezvous_mediator.rs
+index 042d62b6c..eb8018a8a 100644
+--- a/src/rendezvous_mediator.rs
++++ b/src/rendezvous_mediator.rs
+@@ -272,6 +272,8 @@ impl RendezvousMediator {
+     }
+ 
+     pub async fn start_all() {
++        crate::discovery::watch();
++        crate::discovery::sync().await;
+         crate::test_nat_type();
+         if config::is_outgoing_only() {
+             loop {
+@@ -311,6 +313,7 @@ impl RendezvousMediator {
+                 && !crate::platform::installing_service()
+             {
+                 let mut futs = Vec::new();
++                crate::discovery::sync().await;
+                 let servers = Config::get_rendezvous_servers();
+                 SHOULD_EXIT.store(false, Ordering::SeqCst);
+                 MANUAL_RESTARTED.store(false, Ordering::SeqCst);
+@@ -1319,6 +1322,9 @@ impl RendezvousMediator {
+     }
+ 
+     fn get_relay_server(&self, provided_by_rendezvous_server: String) -> String {
++        if let Some(relay_server) = crate::discovery::relay_server() {
++            return relay_server;
++        }
+         let mut relay_server = Config::get_option("relay-server");
+         if relay_server.is_empty() {
+             relay_server = provided_by_rendezvous_server;
+-- 
+2.56.0.windows.2
+
