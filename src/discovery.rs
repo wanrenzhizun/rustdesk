@@ -80,41 +80,45 @@ static STATE: Mutex<State> = Mutex::new(State {
 /// would idle until something else forced a reconnect. Polling the option keeps the hook out of
 /// the FFI layer, which changes often upstream.
 pub fn watch() {
-    static STARTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-    if STARTED.swap(true, std::sync::atomic::Ordering::SeqCst) {
+    if WATCHING.swap(true, std::sync::atomic::Ordering::SeqCst) {
         return;
     }
-    tokio::spawn(async {
-        let mut seen_url = String::new();
-        loop {
-            tokio::time::sleep(WATCH_INTERVAL).await;
-            let url = Config::get_option(OPTION_DISCOVERY_URL).trim().to_owned();
-            if url.is_empty() {
-                if seen_url.is_empty() {
-                    continue;
-                }
-                log::info!("discovery: endpoint cleared, back to the manual settings");
-                seen_url.clear();
-                apply(None);
-                crate::rendezvous_mediator::RendezvousMediator::restart();
+    tokio::spawn(watch_here());
+}
+
+/// Polls the endpoint until the process dies, restarting the mediator when the answer changes.
+async fn watch_here() {
+    let mut seen_url = String::new();
+    loop {
+        tokio::time::sleep(WATCH_INTERVAL).await;
+        let url = Config::get_option(OPTION_DISCOVERY_URL).trim().to_owned();
+        if url.is_empty() {
+            if seen_url.is_empty() {
                 continue;
             }
-            // The document behind the URL can change without the URL changing, so re-read it
-            // instead of remembering either one. Comparing the answer keeps the reconnect away
-            // from every poll that returns the same servers.
-            let before = STATE.lock().unwrap().active.clone();
-            let changed_url = url != seen_url;
-            seen_url = url.clone();
-            drop_before_refetch();
-            sync().await;
-            let after = STATE.lock().unwrap().active.clone();
-            if changed_url || after != before {
-                log::info!("discovery: servers changed, reconnecting");
-                crate::rendezvous_mediator::RendezvousMediator::restart();
-            }
+            log::info!("discovery: endpoint cleared, back to the manual settings");
+            seen_url.clear();
+            apply(None);
+            crate::rendezvous_mediator::RendezvousMediator::restart();
+            continue;
         }
-    });
+        // The document behind the URL can change without the URL changing, so re-read it
+        // instead of remembering either one. Comparing the answer keeps the reconnect away
+        // from every poll that returns the same servers.
+        let before = STATE.lock().unwrap().active.clone();
+        let changed_url = url != seen_url;
+        seen_url = url.clone();
+        drop_before_refetch();
+        sync().await;
+        let after = STATE.lock().unwrap().active.clone();
+        if changed_url || after != before {
+            log::info!("discovery: servers changed, reconnecting");
+            crate::rendezvous_mediator::RendezvousMediator::restart();
+        }
+    }
 }
+/// Set by whichever entry point started the poller, so only one runs per process.
+static WATCHING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Makes the next [`sync`] fetch instead of serving the cached answer.
 fn drop_before_refetch() {
@@ -148,11 +152,21 @@ pub fn start_blocking() {
                     .enable_all()
                     .build()
                 {
-                    rt.block_on(sync());
+                    // The loop keeps the resolved servers current after this first answer; the
+                    // connect path only starts it once a server exists, which on mobile is not
+                    // until the user shares a screen.
+                    rt.block_on(async {
+                        sync().await;
+                        let (lock, cv) = &*DONE.get().expect("gate");
+                        *lock.lock().unwrap() = true;
+                        cv.notify_all();
+                        watch_here().await;
+                    });
+                } else {
+                    let (lock, cv) = &*DONE.get().expect("gate");
+                    *lock.lock().unwrap() = true;
+                    cv.notify_all();
                 }
-                let (lock, cv) = &*DONE.get().expect("gate");
-                *lock.lock().unwrap() = true;
-                cv.notify_all();
             });
     }
     let (lock, cv) = gate;
