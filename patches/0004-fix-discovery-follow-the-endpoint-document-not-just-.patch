@@ -1,7 +1,7 @@
 From a68ee0a55e2749b9aa5d9884141964a1f3ad0e6a Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 13:10:07 +0800
-Subject: [PATCH 4/6] fix(discovery): follow the endpoint document, not just
+Subject: [PATCH 4/7] fix(discovery): follow the endpoint document, not just
  its URL
 
 The watcher only compared the configured URL, so editing the document behind
