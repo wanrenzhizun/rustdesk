@@ -402,11 +402,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # This is upstream's list; libunwind-dev must come first or libgstreamer1.0-dev
+          # fails to configure and gstreamer-sys then has no pkg-config entry to find.
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            libgtk-3-dev libxcb-randr0-dev libxdo-dev libxfixes-dev libxcb-shape0-dev \
-            libxcb-xfixes0-dev libasound2-dev libpulse-dev libva-dev libvdpau-dev \
-            libdrm-dev libclang-dev clang cmake ninja-build pkg-config libssl-dev
+          sudo apt-get install -y \
+            clang cmake curl gcc-multilib git g++ g++-multilib \
+            libayatana-appindicator3-dev libasound2-dev libc6-dev libclang-dev \
+            libunwind-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            libgtk-3-dev libpulse-dev libva-dev libxcb-randr0-dev libxcb-shape0-dev \
+            libxcb-xfixes0-dev libxdo-dev libxfixes-dev llvm-dev nasm \
+            ninja-build openjdk-17-jdk-headless pkg-config tree wget
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -497,8 +502,7 @@ jobs:
         run: |
           set -euo pipefail
           # The Flutter build only packages libs already sitting in jniLibs, so cargo runs first.
-          export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=\
-            "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang"
+          export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang"
           cargo build --release --target aarch64-linux-android --features flutter,hwcodec
           ls -la target/aarch64-linux-android/release/liblibrustdesk.so
 
