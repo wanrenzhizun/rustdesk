@@ -5339,6 +5339,11 @@ pub mod peer_online {
     }
 
     async fn create_online_stream() -> ResultType<Stream> {
+        // A discovered deployment may expose each service on its own mapped port, where the
+        // port-minus-one neighbour does not exist; use the announced address when there is one.
+        if let Some(online_server) = crate::discovery::online_server() {
+            return connect_tcp(online_server, CONNECT_TIMEOUT).await;
+        }
         let (rendezvous_server, _servers, _contained) =
             crate::get_rendezvous_server(READ_TIMEOUT).await;
         let tmp: Vec<&str> = rendezvous_server.split(":").collect();

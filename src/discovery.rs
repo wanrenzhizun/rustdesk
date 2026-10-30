@@ -26,6 +26,7 @@ struct Discovered {
     id_server: String,
     relay_server: String,
     api_server: String,
+    online_server: String,
     key: String,
 }
 
@@ -34,6 +35,7 @@ impl Discovered {
         self.id_server.is_empty()
             && self.relay_server.is_empty()
             && self.api_server.is_empty()
+            && self.online_server.is_empty()
             && self.key.is_empty()
     }
 }
@@ -63,6 +65,7 @@ static STATE: Mutex<State> = Mutex::new(State {
         id_server: String::new(),
         relay_server: String::new(),
         api_server: String::new(),
+        online_server: String::new(),
         key: String::new(),
     },
     previous_exe_server: None,
@@ -158,6 +161,14 @@ pub fn api_server() -> Option<String> {
     non_empty(STATE.lock().unwrap().active.api_server.clone())
 }
 
+/// The announced online-status server, when it is currently overridden.
+///
+/// The client otherwise derives it as `id_server` port minus one, which only works when the
+/// endpoints share a host and stay adjacent, as they do on an unmapped rustdesk-server.
+pub fn online_server() -> Option<String> {
+    non_empty(STATE.lock().unwrap().active.online_server.clone())
+}
+
 /// The announced relay server, when it is currently overridden.
 pub fn relay_server() -> Option<String> {
     non_empty(STATE.lock().unwrap().active.relay_server.clone())
@@ -204,6 +215,11 @@ fn apply_value(state: &mut State, value: &Discovered) {
     for (announced, applied, option) in [
         (&value.relay_server, &state.active.relay_server, "relay-server"),
         (&value.api_server, &state.active.api_server, "api-server"),
+        (
+            &value.online_server,
+            &state.active.online_server,
+            "online-server",
+        ),
         (&value.key, &state.active.key, "key"),
     ] {
         if !announced.is_empty() && announced != applied {
@@ -280,6 +296,7 @@ fn parse_body(body: &str) -> Option<Discovered> {
         id_server: field("id_server"),
         relay_server: field("relay_server"),
         api_server: field("api_server"),
+        online_server: field("online_server"),
         key: field("key"),
     };
     if !is_plausible_server(&discovered.id_server) {
@@ -324,6 +341,7 @@ mod tests {
             "id_server": "119.1.189.42:23456",
             "relay_server": "119.1.189.42:23457",
             "api_server": "http://119.1.189.42:21114",
+            "online_server": "119.1.189.42:23455",
             "key": "OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw="
         }"#;
         assert_eq!(
@@ -332,9 +350,25 @@ mod tests {
                 id_server: "119.1.189.42:23456".to_owned(),
                 relay_server: "119.1.189.42:23457".to_owned(),
                 api_server: "http://119.1.189.42:21114".to_owned(),
+                online_server: "119.1.189.42:23455".to_owned(),
                 key: "OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=".to_owned(),
             })
         );
+    }
+
+    #[test]
+    fn parse_json_reads_an_explicit_online_server() {
+        let parsed = parse_body(
+            r#"{"id_server": "a:11663", "online_server": "a:34567"}"#,
+        )
+        .unwrap();
+        assert_eq!(parsed.online_server, "a:34567");
+    }
+
+    #[test]
+    fn parse_json_leaves_online_server_empty_when_absent() {
+        let parsed = parse_body(r#"{"id_server": "a:11663"}"#).unwrap();
+        assert_eq!(parsed.online_server, "");
     }
 
     #[test]
