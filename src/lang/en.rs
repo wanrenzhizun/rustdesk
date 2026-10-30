@@ -291,5 +291,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("api_server_connection_tip", "Your custom server uses unencrypted HTTP. Contact your administrator to enable HTTPS."),
         ("api_server_empty_tip", "With API Server empty, your custom server defaults to HTTP. Contact your administrator to enable HTTPS."),
         ("android-logs-folder-tip", "Choose Android → media to store log files."),
+        ("Discovery URL", ""),
+        ("discovery_url_tip", "Leave empty to disable. When set, the ID server, relay server, API server and key follow this address automatically."),
+        ("discovery_url_insecure_tip", "This address uses plain HTTP, so anyone on the network can see and change what it returns. Use HTTPS unless you trust this network."),
     ].iter().cloned().collect();
 }

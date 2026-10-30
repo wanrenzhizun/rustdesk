@@ -1277,6 +1277,9 @@ fn get_api_server_(api: String, custom: String) -> String {
             return lic.api.clone();
         }
     }
+    if let Some(api_server) = crate::discovery::api_server() {
+        return api_server;
+    }
     if !api.is_empty() {
         return api.to_owned();
     }
@@ -2148,6 +2151,9 @@ pub async fn get_key(sync: bool) -> String {
             return lic.key;
         }
     }
+    if let Some(key) = crate::discovery::key() {
+        return key;
+    }
     #[cfg(target_os = "ios")]
     let mut key = Config::get_option("key");
     #[cfg(not(target_os = "ios"))]
@@ -2443,6 +2449,9 @@ pub fn create_symmetric_key_msg(their_pk_b: [u8; 32]) -> (Bytes, Bytes, secretbo
 
 #[inline]
 pub fn using_public_server() -> bool {
+    if let Some(id_server) = crate::discovery::id_server() {
+        return id_server.is_empty();
+    }
     crate::get_custom_rendezvous_server(get_option("custom-rendezvous-server")).is_empty()
 }
 

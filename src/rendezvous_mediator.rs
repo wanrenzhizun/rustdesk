@@ -272,6 +272,8 @@ impl RendezvousMediator {
     }
 
     pub async fn start_all() {
+        crate::discovery::watch();
+        crate::discovery::sync().await;
         crate::test_nat_type();
         if config::is_outgoing_only() {
             loop {
@@ -311,6 +313,7 @@ impl RendezvousMediator {
                 && !crate::platform::installing_service()
             {
                 let mut futs = Vec::new();
+                crate::discovery::sync().await;
                 let servers = Config::get_rendezvous_servers();
                 SHOULD_EXIT.store(false, Ordering::SeqCst);
                 MANUAL_RESTARTED.store(false, Ordering::SeqCst);
@@ -1319,6 +1322,9 @@ impl RendezvousMediator {
     }
 
     fn get_relay_server(&self, provided_by_rendezvous_server: String) -> String {
+        if let Some(relay_server) = crate::discovery::relay_server() {
+            return relay_server;
+        }
         let mut relay_server = Config::get_option("relay-server");
         if relay_server.is_empty() {
             relay_server = provided_by_rendezvous_server;

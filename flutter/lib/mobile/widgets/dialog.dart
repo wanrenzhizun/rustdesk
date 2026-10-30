@@ -77,12 +77,14 @@ void showServerSettingsWithValue(
   final relayCtrl = TextEditingController(text: serverConfig.relayServer);
   final apiCtrl = TextEditingController(text: serverConfig.apiServer);
   final keyCtrl = TextEditingController(text: serverConfig.key);
+  final discoveryCtrl =
+      TextEditingController(text: serverConfig.discoveryUrl);
 
   RxString idServerMsg = ''.obs;
   RxString relayServerMsg = ''.obs;
   RxString apiServerMsg = ''.obs;
 
-  final controllers = [idCtrl, relayCtrl, apiCtrl, keyCtrl];
+  final controllers = [idCtrl, relayCtrl, apiCtrl, keyCtrl, discoveryCtrl];
   final errMsgs = [
     idServerMsg,
     relayServerMsg,
@@ -101,7 +103,8 @@ void showServerSettingsWithValue(
               idServer: idCtrl.text.trim(),
               relayServer: relayCtrl.text.trim(),
               apiServer: apiCtrl.text.trim(),
-              key: keyCtrl.text.trim()));
+              key: keyCtrl.text.trim(),
+              discoveryUrl: discoveryCtrl.text.trim()));
       setState(() {
         isInProgress = false;
       });
@@ -151,7 +154,12 @@ void showServerSettingsWithValue(
         ],
       ),
       content: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 500),
+        constraints: BoxConstraints(
+          minWidth: 500,
+          // Without a height bound AlertDialog stretches a one-field form to the
+          // whole window, which shows up as a large blank area under the field.
+          maxHeight: isDesktop || isWeb ? 160 : double.infinity,
+        ),
         child: Form(
           child: Obx(() => Column(
                 mainAxisSize: MainAxisSize.min,
@@ -191,6 +199,7 @@ void showServerSettingsWithValue(
                   ),
                   SizedBox(height: 8),
                   buildField('Key', keyCtrl, ''),
+
                   if (isInProgress)
                     Padding(
                       padding: EdgeInsets.only(top: 8),
@@ -272,4 +281,117 @@ void setPrivacyModeDialog(
               .toList()),
     );
   }, backDismiss: true, clickMaskDismiss: true);
+}
+
+void showDiscoveryUrlDialog(
+    OverlayDialogManager dialogManager, void Function(VoidCallback) setState) async {
+  final options = await bind.mainGetOptions();
+  String current = '';
+  try {
+    final map = jsonDecode(options);
+    current = (map['discovery-url'] ?? '') as String;
+  } catch (e) {
+    debugPrint('Invalid options: $e');
+  }
+  showDiscoveryUrlDialogWithValue(current, dialogManager, setState);
+}
+
+void showDiscoveryUrlDialogWithValue(
+    String current, OverlayDialogManager dialogManager, void Function(VoidCallback)? upSetState) {
+  const labelWidth = 120.0;
+  const labelSpacing = 8.0;
+  final urlCtrl = TextEditingController(text: current);
+  final errMsg = ''.obs;
+  dialogManager.show((setState, close, context) {
+    urlCtrl.addListener(() => setState(() {}));
+    Future<bool> submit() async {
+      final value = urlCtrl.text.trim();
+      if (value.isNotEmpty &&
+          !value.startsWith('https://') &&
+          !value.startsWith('http://')) {
+        errMsg.value = translate('invalid_http');
+        return false;
+      }
+      await bind.mainSetOption(key: 'discovery-url', value: value);
+      return true;
+    }
+
+    Widget field() {
+      final input = serverSettingsTextFormField(
+        label: translate('Discovery URL'),
+        controller: urlCtrl,
+        errorMsg: errMsg.value,
+        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        showLabelText: !(isDesktop || isWeb),
+        autofocus: true,
+      ).workaroundFreezeLinuxMint();
+      if (isDesktop || isWeb) {
+        return Row(
+          children: [
+            SizedBox(
+              width: labelWidth,
+              child: Text(translate('Discovery URL')),
+            ),
+            SizedBox(width: labelSpacing),
+            Expanded(child: input),
+          ],
+        );
+      }
+      return input;
+    }
+
+    return CustomAlertDialog(
+      title: Text(translate('Discovery URL')),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 500),
+        child: Form(
+          child: Obx(() => Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  field(),
+                  Padding(
+                    padding: EdgeInsetsDirectional.only(
+                      start: isDesktop || isWeb ? labelWidth + labelSpacing : 0,
+                      top: 6,
+                    ),
+                    child: Text(
+                      translate('discovery_url_tip'),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
+                  if (urlCtrl.text.trim().startsWith('http://'))
+                    Padding(
+                      padding: EdgeInsetsDirectional.only(
+                        start:
+                            isDesktop || isWeb ? labelWidth + labelSpacing : 0,
+                        top: 4,
+                      ),
+                      child: Text(
+                        translate('discovery_url_insecure_tip'),
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.orange),
+                      ),
+                    ),
+                ],
+              )),
+        ),
+      ),
+      actions: [
+        dialogButton('Cancel', onPressed: () {
+          close();
+        }, isOutline: true),
+        dialogButton(
+          'OK',
+          onPressed: () async {
+            if (await submit()) {
+              close();
+              showToast(translate('Successful'));
+              upSetState?.call(() {});
+            }
+          },
+        ),
+      ],
+    );
+  });
 }

@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Please select Android → media.", "請選擇 Android → media。"),
         ("Trust duration (days)", "信任有效期（天）"),
         ("Renew trust", "延長信任期限"),
+        ("Discovery URL", "發現服務位址"),
+        ("discovery_url_tip", "留空則不啟用。填寫後，伺服器位址與金鑰將由該位址下發，變化時自動跟隨。"),
+        ("discovery_url_insecure_tip", "該位址使用明文 HTTP，網路上的其他人可以看到並竄改回傳內容。除非你信任目前網路，否則請使用 HTTPS。"),
     ].iter().cloned().collect();
 }

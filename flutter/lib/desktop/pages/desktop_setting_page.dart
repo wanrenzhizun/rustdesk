@@ -1931,6 +1931,13 @@ class _NetworkState extends State<_Network> with AutomaticKeepAliveClientMixin {
                   title: 'ID/Relay Server',
                   onTap: () => showServerSettings(gFFI.dialogManager, setState),
                 ),
+              if (!hideServer)
+                listTile(
+                  icon: Icons.cloud_download_outlined,
+                  title: 'Discovery URL',
+                  onTap: () =>
+                      showDiscoveryUrlDialog(gFFI.dialogManager, setState),
+                ),
               if (!hideProxy && !hideServer) divider,
               if (!hideProxy)
                 listTile(

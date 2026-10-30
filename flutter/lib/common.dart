@@ -2923,13 +2923,19 @@ class ServerConfig {
   late String relayServer;
   late String apiServer;
   late String key;
+  late String discoveryUrl;
 
   ServerConfig(
-      {String? idServer, String? relayServer, String? apiServer, String? key}) {
+      {String? idServer,
+      String? relayServer,
+      String? apiServer,
+      String? key,
+      String? discoveryUrl}) {
     this.idServer = idServer?.trim() ?? '';
     this.relayServer = relayServer?.trim() ?? '';
     this.apiServer = apiServer?.trim() ?? '';
     this.key = key?.trim() ?? '';
+    this.discoveryUrl = discoveryUrl?.trim() ?? '';
   }
 
   /// decode from shared string (from user shared or rustdesk-server generated)
@@ -2949,6 +2955,7 @@ class ServerConfig {
     relayServer = json['relay'] ?? '';
     apiServer = json['api'] ?? '';
     key = json['key'] ?? '';
+    discoveryUrl = json['discovery'] ?? '';
   }
 
   /// encode to shared string
@@ -2959,6 +2966,7 @@ class ServerConfig {
     config['relay'] = relayServer.trim();
     config['api'] = apiServer.trim();
     config['key'] = key.trim();
+    config['discovery'] = discoveryUrl.trim();
     return base64UrlEncode(Uint8List.fromList(jsonEncode(config).codeUnits))
         .split('')
         .reversed
@@ -2970,7 +2978,8 @@ class ServerConfig {
       : idServer = options['custom-rendezvous-server'] ?? "",
         relayServer = options['relay-server'] ?? "",
         apiServer = options['api-server'] ?? "",
-        key = options['key'] ?? "";
+        key = options['key'] ?? "",
+        discoveryUrl = options['discovery-url'] ?? "";
 }
 
 Widget dialogButton(String text,
@@ -3594,11 +3603,22 @@ Future<bool> setServerConfig(
   config.relayServer = removeEndSlash(config.relayServer.trim());
   config.apiServer = removeEndSlash(config.apiServer.trim());
   config.key = config.key.trim();
+  config.discoveryUrl = config.discoveryUrl.trim();
+  if (config.discoveryUrl.isNotEmpty &&
+      !config.discoveryUrl.startsWith('https://') &&
+      !config.discoveryUrl.startsWith('http://')) {
+    showToast(
+        '${translate("Discovery URL")}: ${translate("invalid_http")}');
+    return false;
+  }
   if (controllers != null) {
     controllers[0].text = config.idServer;
     controllers[1].text = config.relayServer;
     controllers[2].text = config.apiServer;
     controllers[3].text = config.key;
+    if (controllers.length > 4) {
+      controllers[4].text = config.discoveryUrl;
+    }
   }
   // id
   if (config.idServer.isNotEmpty && errMsgs != null) {
@@ -3633,6 +3653,8 @@ Future<bool> setServerConfig(
   await bind.mainSetOption(key: 'relay-server', value: config.relayServer);
   await bind.mainSetOption(key: 'api-server', value: config.apiServer);
   await bind.mainSetOption(key: 'key', value: config.key);
+  await bind.mainSetOption(
+      key: 'discovery-url', value: config.discoveryUrl);
   final newApiServer = await bind.mainGetApiServer();
   if (oldApiServer.isNotEmpty &&
       oldApiServer != newApiServer &&

@@ -823,5 +823,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Please select Android → media.", "გთხოვთ, აირჩიოთ Android → media."),
         ("Trust duration (days)", "ნდობის ხანგრძლივობა (დღე)"),
         ("Renew trust", "ნდობის განახლება"),
+        ("Discovery URL", ""),
+        ("discovery_url_tip", ""),
+        ("discovery_url_insecure_tip", ""),
     ].iter().cloned().collect();
 }
