@@ -367,14 +367,15 @@ jobs:
           echo "BUNDLE_DIR=$dir" >> "$GITHUB_ENV"
 
       - name: Package the portable zip
-        shell: bash
-        # The release ships one archive per platform, so the loose bundle is zipped here.
+        shell: pwsh
+        # The release ships one archive per platform. Windows runners carry no zip binary,
+        # so this uses the built-in cmdlet instead.
         run: |
-          set -euo pipefail
-          version=$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"(.+)".*/\1/')
-          mkdir -p ./dist
-          (cd "$BUNDLE_DIR/.." && zip -qr "$GITHUB_WORKSPACE/dist/rustdesk-$version-x86_64-portable.zip" "$(basename "$BUNDLE_DIR")")
-          ls -la ./dist
+          $version = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"(.+)"').Matches[0].Groups[1].Value
+          New-Item -ItemType Directory -Force -Path ./dist | Out-Null
+          $bundle = Resolve-Path $env:BUNDLE_DIR
+          Compress-Archive -Path $bundle.Path -DestinationPath "./dist/rustdesk-$version-x86_64-portable.zip" -Force
+          Get-ChildItem ./dist
 
       - name: Upload the portable zip
         uses: actions/upload-artifact@v4
