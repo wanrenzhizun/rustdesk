@@ -173,6 +173,29 @@ pub async fn sync() {
 }
 
 /// Whether the rendezvous server in use comes from the endpoint rather than the manual setting.
+/// Overlays the servers the endpoint announced onto an options map.
+///
+/// The client processes read their options over IPC from the host, so the values resolved here
+/// have to travel with that answer: without this the UI keeps reporting the public server while
+/// the host is already connected to the endpoint's.
+pub fn overlay_options(options: &mut std::collections::HashMap<String, String>) {
+    let state = STATE.lock().unwrap();
+    if !state.is_active() {
+        return;
+    }
+    for (option, value) in [
+        ("custom-rendezvous-server", &state.active.id_server),
+        ("relay-server", &state.active.relay_server),
+        ("api-server", &state.active.api_server),
+        ("online-server", &state.active.online_server),
+        ("key", &state.active.key),
+    ] {
+        if !value.is_empty() {
+            options.insert(option.to_owned(), value.clone());
+        }
+    }
+}
+
 pub fn id_server() -> Option<String> {
     non_empty(STATE.lock().unwrap().active.id_server.clone())
 }

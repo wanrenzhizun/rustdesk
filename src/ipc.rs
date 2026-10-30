@@ -1073,7 +1073,8 @@ async fn handle(data: Data, stream: &mut Connection) {
         },
         Data::Options(value) => match value {
             None => {
-                let v = Config::get_options();
+                let mut v = Config::get_options();
+                crate::discovery::overlay_options(&mut v);
                 allow_err!(stream.send(&Data::Options(Some(v))).await);
             }
             Some(value) => {
