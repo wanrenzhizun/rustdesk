@@ -366,6 +366,23 @@ jobs:
           ls -la "$dir" | head -30
           echo "BUNDLE_DIR=$dir" >> "$GITHUB_ENV"
 
+      - name: Package the portable zip
+        shell: bash
+        # The release ships one archive per platform, so the loose bundle is zipped here.
+        run: |
+          set -euo pipefail
+          version=$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"(.+)".*/\1/')
+          mkdir -p ./dist
+          (cd "$BUNDLE_DIR/.." && zip -qr "$GITHUB_WORKSPACE/dist/rustdesk-$version-x86_64-portable.zip" "$(basename "$BUNDLE_DIR")")
+          ls -la ./dist
+
+      - name: Upload the portable zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-windows-x86_64-portable-zip
+          path: ./dist/*.zip
+          if-no-files-found: error
+
       - name: Upload the bundle
         uses: actions/upload-artifact@v4
         with:
@@ -661,7 +678,7 @@ jobs:
     name: Publish GitHub release
     # Publish whatever built; one broken platform should not hide the others.
     if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.package }}
-    needs: [package-windows-msi, package-linux-deb, package-android-apk]
+    needs: [package-windows-msi, package-windows-portable, package-linux-deb, package-android-apk]
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -683,7 +700,7 @@ jobs:
         with:
           path: ./dist
           merge-multiple: true
-          pattern: rustdesk-*-{msi,deb,apk}
+          pattern: rustdesk-*-{msi,deb,apk,portable-zip}
 
       - name: List what will be published
         shell: bash
