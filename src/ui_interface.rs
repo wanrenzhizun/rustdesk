@@ -345,6 +345,9 @@ pub fn set_peer_option(id: String, name: String, value: String) {
 
 #[inline]
 pub fn get_options() -> String {
+    // Resolve the endpoint on the first read: on mobile nothing else starts it before the user
+    // shares a screen, and without it the settings page reports the public server.
+    crate::discovery::start_blocking();
     let options = {
         #[cfg(not(any(target_os = "android", target_os = "ios")))]
         {
@@ -352,7 +355,9 @@ pub fn get_options() -> String {
         }
         #[cfg(any(target_os = "android", target_os = "ios"))]
         {
-            Config::get_options()
+            let mut options = Config::get_options();
+            crate::discovery::overlay_options(&mut options);
+            options
         }
     };
     let mut m = serde_json::Map::new();

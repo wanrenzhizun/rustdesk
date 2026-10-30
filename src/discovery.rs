@@ -18,6 +18,8 @@ const OPTION_ONLINE_SERVER: &str = "online-server";
 
 const CACHE_TTL: Duration = Duration::from_secs(60);
 const FETCH_TIMEOUT: Duration = Duration::from_secs(3);
+/// How long the first options read waits for the endpoint's answer.
+const FIRST_WAIT: Duration = Duration::from_secs(5);
 const MAX_BODY_BYTES: u64 = 64 * 1024;
 const KEY_LEN: usize = 44;
 
@@ -119,6 +121,46 @@ fn drop_before_refetch() {
     CACHE.lock().unwrap().last_attempt = None;
 }
 
+/// Resolves the endpoint once on a worker thread, for callers that run before the connect loop.
+///
+/// The client UI reads its options before any server exists, so without a first resolution here
+/// it reports the public server until the host happens to start.
+/// Runs the first resolution on a worker thread and waits for it, bounded.
+///
+/// A caller that reads its options before the connect loop exists would otherwise report the
+/// public server for as long as the fetch takes, so the first read waits instead. Once the cache
+/// holds an answer the wait returns immediately, which is what every later read does.
+pub fn start_blocking() {
+    // A condvar rather than a channel: the value is read from many threads, and a channel's
+    // receiver is not Sync.
+    static DONE: std::sync::OnceLock<
+        (std::sync::Mutex<bool>, std::sync::Condvar),
+    > = std::sync::OnceLock::new();
+    static STARTED: std::sync::atomic::AtomicBool =
+        std::sync::atomic::AtomicBool::new(false);
+
+    let gate = DONE.get_or_init(|| (std::sync::Mutex::new(false), std::sync::Condvar::new()));
+    if !STARTED.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        let _ = std::thread::Builder::new()
+            .name("discovery-first".to_owned())
+            .spawn(|| {
+                if let Ok(rt) = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                {
+                    rt.block_on(sync());
+                }
+                let (lock, cv) = &*DONE.get().expect("gate");
+                *lock.lock().unwrap() = true;
+                cv.notify_all();
+            });
+    }
+    let (lock, cv) = gate;
+    let mut done = lock.lock().unwrap();
+    if !*done {
+        let _ = cv.wait_timeout(done, FIRST_WAIT);
+    }
+}
 /// Injects the discovered servers into the runtime config when `discovery-url` is set.
 ///
 /// Called by the rendezvous mediator once at startup and again before every reconnect, so it has
