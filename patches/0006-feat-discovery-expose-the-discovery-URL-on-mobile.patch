@@ -1,0 +1,35 @@
+From 2181c298741ea1e205a7cfa595ebce661e1795b6 Mon Sep 17 00:00:00 2001
+From: huzhaolun <huzhaolun@qq.com>
+Date: Fri, 30 Oct 2026 19:38:59 +0800
+Subject: [PATCH 6/6] feat(discovery): expose the discovery URL on mobile
+
+The tile only existed on the desktop settings page, so the Android and iOS
+builds had no way to point the client at an endpoint document.
+---
+ flutter/lib/mobile/pages/settings_page.dart | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/flutter/lib/mobile/pages/settings_page.dart b/flutter/lib/mobile/pages/settings_page.dart
+index 3ea64b37a..4f6ba37d9 100644
+--- a/flutter/lib/mobile/pages/settings_page.dart
++++ b/flutter/lib/mobile/pages/settings_page.dart
+@@ -776,6 +776,16 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
+                     setState(callback);
+                   });
+                 }),
++          if (!disabledSettings && !_hideNetwork && !_hideServer)
++            SettingsTile(
++                title: Text(translate('Discovery URL')),
++                leading: Icon(Icons.cloud_download_outlined),
++                onPressed: (context) {
++                  showDiscoveryUrlDialog(gFFI.dialogManager, (callback) async {
++                    _isUsingPublicServer = await bind.mainIsUsingPublicServer();
++                    setState(callback);
++                  });
++                }),
+           if (!_hideNetwork && !_hideProxy)
+             SettingsTile(
+                 title: Text(translate('Socks5/Http(s) Proxy')),
+-- 
+2.56.0.windows.2
+
