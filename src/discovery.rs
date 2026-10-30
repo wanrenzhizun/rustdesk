@@ -82,19 +82,40 @@ pub fn watch() {
         return;
     }
     tokio::spawn(async {
-        let mut seen = Config::get_option(OPTION_DISCOVERY_URL).trim().to_owned();
+        let mut seen_url = String::new();
         loop {
             tokio::time::sleep(WATCH_INTERVAL).await;
-            let current = Config::get_option(OPTION_DISCOVERY_URL).trim().to_owned();
-            if current == seen {
+            let url = Config::get_option(OPTION_DISCOVERY_URL).trim().to_owned();
+            if url.is_empty() {
+                if seen_url.is_empty() {
+                    continue;
+                }
+                log::info!("discovery: endpoint cleared, back to the manual settings");
+                seen_url.clear();
+                apply(None);
+                crate::rendezvous_mediator::RendezvousMediator::restart();
                 continue;
             }
-            log::info!("discovery: endpoint changed, applying");
-            seen = current;
+            // The document behind the URL can change without the URL changing, so re-read it
+            // instead of remembering either one. Comparing the answer keeps the reconnect away
+            // from every poll that returns the same servers.
+            let before = STATE.lock().unwrap().active.clone();
+            let changed_url = url != seen_url;
+            seen_url = url.clone();
+            drop_before_refetch();
             sync().await;
-            crate::rendezvous_mediator::RendezvousMediator::restart();
+            let after = STATE.lock().unwrap().active.clone();
+            if changed_url || after != before {
+                log::info!("discovery: servers changed, reconnecting");
+                crate::rendezvous_mediator::RendezvousMediator::restart();
+            }
         }
     });
+}
+
+/// Makes the next [`sync`] fetch instead of serving the cached answer.
+fn drop_before_refetch() {
+    CACHE.lock().unwrap().last_attempt = None;
 }
 
 /// Injects the discovered servers into the runtime config when `discovery-url` is set.
