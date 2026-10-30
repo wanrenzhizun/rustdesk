@@ -499,11 +499,13 @@ jobs:
         shell: bash
         env:
           ANDROID_NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+          ANDROID_NDK_ROOT: ${{ steps.ndk.outputs.ndk-path }}
         run: |
           set -euo pipefail
-          # The Flutter build only packages libs already sitting in jniLibs, so cargo runs first.
-          export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang"
-          cargo build --release --target aarch64-linux-android --features flutter,hwcodec
+          # flutter/ndk_arm64.sh is the repo's own cross-compile entry point: cargo-ndk sets
+          # CC/AR/linker for the target, which a hand-written linker var does not cover.
+          cargo install cargo-ndk --version 3.1.2 --locked
+          ./flutter/ndk_arm64.sh
           ls -la target/aarch64-linux-android/release/liblibrustdesk.so
 
       - name: Install flutter
