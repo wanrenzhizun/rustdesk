@@ -612,7 +612,9 @@ jobs:
             echo "::error::ANDROID_KEYSTORE_B64 secret is not set"
             exit 1
           fi
-          echo "$ANDROID_KEYSTORE_B64" | base64 -d > flutter/android/rustdesk-fork.jks
+          # key.properties is read from rootProject (flutter/android), but storeFile is
+          # resolved relative to app/, which is where build.gradle evaluates file().
+          echo "$ANDROID_KEYSTORE_B64" | base64 -d > flutter/android/app/rustdesk-fork.jks
           {
             echo "storePassword=${ANDROID_KEY_PASSWORD}"
             echo "keyPassword=${ANDROID_KEY_PASSWORD}"
