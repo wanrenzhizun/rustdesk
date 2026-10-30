@@ -1,7 +1,7 @@
 From e65d060368e000e7c519a27c11dd7151969955be Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Thu, 29 Oct 2026 17:42:14 +0800
-Subject: [PATCH 8/9] fix(discovery): accept plain http endpoints and warn
+Subject: [PATCH 08/10] fix(discovery): accept plain http endpoints and warn
  about them
 
 The URL was rejected unless it started with https://, which broke self-hosted

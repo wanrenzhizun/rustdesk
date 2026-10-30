@@ -1,7 +1,7 @@
 From df2bed1c4ed38bb00ae2b6fe94fd5b88d01bb836 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Wed, 28 Oct 2026 20:37:15 +0800
-Subject: [PATCH 2/9] feat(discovery): resolve the rendezvous server through
+Subject: [PATCH 02/10] feat(discovery): resolve the rendezvous server through
  discovery
 
 Apply the discovered value before every connect attempt, which covers both

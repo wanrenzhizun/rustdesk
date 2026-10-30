@@ -1,8 +1,8 @@
 From fa4e89e37345ed4db384cba78afdf6e38512d373 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Thu, 29 Oct 2026 14:29:23 +0800
-Subject: [PATCH 7/9] feat(discovery): expose discovery URL as its own network
- setting
+Subject: [PATCH 07/10] feat(discovery): expose discovery URL as its own
+ network setting
 
 A dedicated tile next to ID/Relay Server opens a single field dialog, so the
 setting is reachable without opening the server dialog. Both write the same

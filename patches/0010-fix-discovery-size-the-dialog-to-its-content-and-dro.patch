@@ -1,0 +1,115 @@
+From a844acc8436cb9302bc0e70e87204b0f1ecb4b19 Mon Sep 17 00:00:00 2001
+From: huzhaolun <huzhaolun@qq.com>
+Date: Fri, 30 Oct 2026 09:34:44 +0800
+Subject: [PATCH 10/10] fix(discovery): size the dialog to its content and drop
+ the public-server hint
+
+The dialog only constrained its width, so AlertDialog stretched a one-field
+form to the full window and left a large blank area under the input. The
+public-server hint kept showing because using_public_server() only looks at the
+manual custom-rendezvous-server option, which discovery never writes; it now
+reports the injected endpoint instead.
+---
+ flutter/lib/mobile/widgets/dialog.dart | 20 +++++++++++---------
+ src/common.rs                          |  3 +++
+ src/discovery.rs                       | 15 +++++++++++----
+ 3 files changed, 25 insertions(+), 13 deletions(-)
+
+diff --git a/flutter/lib/mobile/widgets/dialog.dart b/flutter/lib/mobile/widgets/dialog.dart
+index ba423405c..977632e0d 100644
+--- a/flutter/lib/mobile/widgets/dialog.dart
++++ b/flutter/lib/mobile/widgets/dialog.dart
+@@ -154,7 +154,12 @@ void showServerSettingsWithValue(
+         ],
+       ),
+       content: ConstrainedBox(
+-        constraints: const BoxConstraints(minWidth: 500),
++        constraints: BoxConstraints(
++          minWidth: 500,
++          // Without a height bound AlertDialog stretches a one-field form to the
++          // whole window, which shows up as a large blank area under the field.
++          maxHeight: isDesktop || isWeb ? 160 : double.infinity,
++        ),
+         child: Form(
+           child: Obx(() => Column(
+                 mainAxisSize: MainAxisSize.min,
+@@ -355,10 +360,8 @@ void showDiscoveryUrlDialogWithValue(
+                       style: const TextStyle(fontSize: 12, color: Colors.grey),
+                     ),
+                   ),
+-                  Obx(() {
+-                    final insecure = urlCtrl.text.trim().startsWith('http://');
+-                    if (!insecure) return const SizedBox.shrink();
+-                    return Padding(
++                  if (urlCtrl.text.trim().startsWith('http://'))
++                    Padding(
+                       padding: EdgeInsetsDirectional.only(
+                         start:
+                             isDesktop || isWeb ? labelWidth + labelSpacing : 0,
+@@ -366,11 +369,10 @@ void showDiscoveryUrlDialogWithValue(
+                       ),
+                       child: Text(
+                         translate('discovery_url_insecure_tip'),
+-                        style: const TextStyle(
+-                            fontSize: 12, color: Colors.orange),
++                        style:
++                            const TextStyle(fontSize: 12, color: Colors.orange),
+                       ),
+-                    );
+-                  }),
++                    ),
+                 ],
+               )),
+         ),
+diff --git a/src/common.rs b/src/common.rs
+index 6f51c489b..bb96bb57e 100644
+--- a/src/common.rs
++++ b/src/common.rs
+@@ -2449,6 +2449,9 @@ pub fn create_symmetric_key_msg(their_pk_b: [u8; 32]) -> (Bytes, Bytes, secretbo
+ 
+ #[inline]
+ pub fn using_public_server() -> bool {
++    if let Some(id_server) = crate::discovery::id_server() {
++        return id_server.is_empty();
++    }
+     crate::get_custom_rendezvous_server(get_option("custom-rendezvous-server")).is_empty()
+ }
+ 
+diff --git a/src/discovery.rs b/src/discovery.rs
+index 16fe03653..4524c1893 100644
+--- a/src/discovery.rs
++++ b/src/discovery.rs
+@@ -153,6 +153,11 @@ pub fn refresh_blocking() {
+     }
+ }
+ 
++/// Whether the rendezvous server in use comes from the endpoint rather than the manual setting.
++pub fn id_server() -> Option<String> {
++    non_empty(STATE.lock().unwrap().active.id_server.clone())
++}
++
+ /// The announced API server, when it is currently overridden.
+ pub fn api_server() -> Option<String> {
+     non_empty(STATE.lock().unwrap().active.api_server.clone())
+@@ -228,12 +233,14 @@ fn fetch(url: &str) -> Result<Discovered, String> {
+     if !url.starts_with("https://") {
+         log::warn!("discovery: {url} is not an https address");
+     }
+-    let client = reqwest::blocking::Client::builder()
++    // Reuse the app's client so the TLS backend matches the rest of the client and the
++    // per-host probe cache is shared. A plain HTTP endpoint takes the Plain path.
++    let client = crate::hbbs_http::create_http_client_with_url(url);
++    let resp = client
++        .get(url)
+         .timeout(FETCH_TIMEOUT)
+-        .connect_timeout(FETCH_TIMEOUT)
+-        .build()
++        .send()
+         .map_err(|err| err.to_string())?;
+-    let resp = client.get(url).send().map_err(|err| err.to_string())?;
+     let status = resp.status();
+     if !status.is_success() {
+         return Err(format!("http status {status}"));
+-- 
+2.56.0.windows.2
+

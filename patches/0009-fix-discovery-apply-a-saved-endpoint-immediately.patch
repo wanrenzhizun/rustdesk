@@ -1,7 +1,7 @@
 From f72b423368cad1b2cf143545093cd0f4d435d3cb Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Thu, 29 Oct 2026 18:46:32 +0800
-Subject: [PATCH 9/9] fix(discovery): apply a saved endpoint immediately
+Subject: [PATCH 09/10] fix(discovery): apply a saved endpoint immediately
 
 Saving discovery-url only asked the mediator to reconnect, so a stopped
 service - which never runs the reconnect loop - kept the old servers until the

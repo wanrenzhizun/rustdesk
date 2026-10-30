@@ -1,7 +1,7 @@
 From 66bc7a7211293a840d0a0618c5e90c03ae46380d Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Wed, 28 Oct 2026 20:37:16 +0800
-Subject: [PATCH 3/9] feat(discovery): override key and api server
+Subject: [PATCH 03/10] feat(discovery): override key and api server
 
 Only non-empty announced values win, so a missing or empty field keeps the
 value the user typed and ReactDesk2.toml is never rewritten.
