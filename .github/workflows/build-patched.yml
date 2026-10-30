@@ -136,6 +136,136 @@ jobs:
         shell: bash
         run: cargo check --lib --features flutter
 
+  package-windows-msi:
+    name: Windows MSI (unsigned)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.package }}
+    needs: [verify-patches, generate-bridge, check-windows]
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Re-checkout with LF endings
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+          git rm -r --cached . -q
+          git reset --hard -q
+
+      - name: Apply every patch in order
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(patches/*.patch)
+          for f in "${files[@]}"; do
+            git apply --3way --whitespace=nowarn "$f"
+          done
+
+      - name: Restore generated bridge files
+        uses: actions/download-artifact@v4
+        with:
+          name: bridge-artifact
+          path: ./
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+
+      - name: Cache cargo registry and target
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: package-msi
+
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: ${{ env.LLVM_VERSION }}
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: C:\vcpkg
+          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
+
+      - name: Install vcpkg dependencies
+        shell: bash
+        env:
+          VCPKG_DEFAULT_HOST_TRIPLET: x64-windows-static
+        run: |
+          "$VCPKG_ROOT/vcpkg" install \
+            --triplet x64-windows-static \
+            --x-install-root="$VCPKG_ROOT/installed"
+
+      - name: Install flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          architecture: x64
+
+      - name: Build the app bundle
+        shell: bash
+        run: python build.py --portable --flutter --skip-portable-pack --hwcodec
+
+      - name: Assemble the payload for the installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          exe=$(find . -path "*windows*runner*Release*" -name rustdesk.exe -print -quit)
+          if [ -z "$exe" ]; then
+            echo "::error::rustdesk.exe not found"
+            exit 1
+          fi
+          src=$(dirname "$exe")
+          echo "payload: $src"
+          rm -rf ./rustdesk && cp -r "$src" ./rustdesk
+          ls ./rustdesk | head -20
+
+      - name: Add the Windows drivers and extras the MSI ships
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The MSI ships these next to the app; the flutter bundle does not carry them.
+          for f in printer_driver_adapter.dll; do
+            if [ -f "flutter/build/windows/x64/runner/Release/$f" ]; then
+              cp "flutter/build/windows/x64/runner/Release/$f" ./rustdesk/
+            fi
+          done
+          if [ -d ./usbmmidd_v2 ]; then cp -r ./usbmmidd_v2 ./rustdesk/; fi
+          ls ./rustdesk | wc -l
+
+      - name: Set up Python for the MSI preprocessor
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Generate the MSI
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"(.+)"').Matches[0].Groups[1].Value
+          Write-Host "version=$version"
+          pushd ./res/msi
+          python preprocess.py -d ../../rustdesk -v $version
+          msbuild msi.sln -p:Configuration=Release -p:Platform=x64 /p:TargetVersion=Windows10
+          $msi = Get-ChildItem ./Package/bin/*/Release/en-us/Package.msi | Select-Object -First 1
+          popd
+          New-Item -ItemType Directory -Force -Path ./dist | Out-Null
+          Copy-Item $msi.FullName "./dist/rustdesk-$version-x86_64.msi"
+          Get-ChildItem ./dist
+
+      - name: Upload the MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-windows-x86_64-msi
+          path: ./dist/*.msi
+          if-no-files-found: error
+
   package-windows-portable:
     name: Portable package (manual)
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.package }}
@@ -237,3 +367,222 @@ jobs:
           path: ${{ env.BUNDLE_DIR }}
           if-no-files-found: error
           retention-days: 14
+
+  package-linux-deb:
+    name: Linux deb
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.package }}
+    needs: [verify-patches, generate-bridge]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Apply every patch in order
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(patches/*.patch)
+          for f in "${files[@]}"; do
+            git apply --3way --whitespace=nowarn "$f"
+          done
+
+      - name: Restore generated bridge files
+        uses: actions/download-artifact@v4
+        with:
+          name: bridge-artifact-flutter-3.44
+          path: ./
+
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgtk-3-dev libxcb-randr0-dev libxdo-dev libxfixes-dev libxcb-shape0-dev \
+            libxcb-xfixes0-dev libasound2-dev libpulse-dev libva-dev libvdpau-dev \
+            libdrm-dev libclang-dev clang cmake ninja-build pkg-config libssl-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: package-linux
+
+      - name: Install flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          architecture: x64
+
+      - name: Build the app
+        shell: bash
+        run: python3 ./build.py --flutter --hwcodec --unix-file-copy-paste
+
+      - name: Build the deb
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"(.+)".*/\1/')
+          echo "version=$version"
+          python3 ./build.py --package ./rustdesk --flutter --hwcodec --unix-file-copy-paste || true
+          shopt -s nullglob
+          debs=(*.deb)
+          if [ ${#debs[@]} -eq 0 ]; then
+            echo "::error::no .deb produced"
+            ls -la | head -30
+            exit 1
+          fi
+          mkdir -p ./dist && mv "${debs[@]}" ./dist/
+          ls -la ./dist
+
+      - name: Upload the deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-linux-x86_64-deb
+          path: ./dist/*.deb
+          if-no-files-found: error
+  package-android-apk:
+    name: Android APK (self-signed)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.package }}
+    needs: [verify-patches, generate-bridge]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Apply every patch in order
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(patches/*.patch)
+          for f in "${files[@]}"; do
+            git apply --3way --whitespace=nowarn "$f"
+          done
+
+      - name: Install Rust toolchain with Android targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+
+      - name: Install the Android NDK
+        uses: nttld/setup-ndk@v1
+        id: ndk
+        with:
+          ndk-version: r26b
+
+      - name: Install flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          architecture: x64
+
+      - name: Set up the signing key
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ANDROID_KEYSTORE_B64:-}" ]; then
+            echo "::error::ANDROID_KEYSTORE_B64 secret is not set"
+            exit 1
+          fi
+          mkdir -p flutter/android
+          echo "$ANDROID_KEYSTORE_B64" | base64 -d > flutter/android/rustdesk-fork.jks
+          cat > flutter/android/key.properties <<EOF
+          storePassword=${ANDROID_KEY_PASSWORD}
+          keyPassword=${ANDROID_KEY_PASSWORD}
+          keyAlias=${ANDROID_KEY_ALIAS}
+          storeFile=rustdesk-fork.jks
+          EOF
+          cat flutter/android/key.properties
+
+      - name: Build the APK
+        shell: bash
+        env:
+          NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+        run: |
+          set -euo pipefail
+          cd flutter
+          flutter pub get
+          flutter build apk --release
+          ls -la build/app/outputs/flutter-apk/
+
+      - name: Collect the APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"(.+)".*/\1/')
+          mkdir -p ./dist
+          cp flutter/build/app/outputs/flutter-apk/app-release.apk \
+             "./dist/rustdesk-$version-arm64-v8a.apk"
+          ls -la ./dist
+
+      - name: Upload the APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-android-apk
+          path: ./dist/*.apk
+          if-no-files-found: error
+
+  publish-release:
+    name: Publish GitHub release
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.package }}
+    needs: [package-windows-msi, package-linux-deb, package-android-apk]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read the version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"(.+)".*/\1/')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Download every package
+        uses: actions/download-artifact@v4
+        with:
+          path: ./dist
+          merge-multiple: true
+          pattern: rustdesk-*-{msi,deb,apk}
+
+      - name: List what will be published
+        shell: bash
+        run: ls -la ./dist
+
+      - name: Publish
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: RustDesk ${{ steps.version.outputs.version }} (patched)
+          body: |
+            Built from `master` plus `patches/`, so it carries every patch in this repo.
+
+            - Windows: `rustdesk-<version>-x86_64.msi` (unsigned; SmartScreen warns)
+            - Linux: `rustdesk-<version>-x86_64.deb`
+            - Android: `rustdesk-<version>-arm64-v8a.apk` (self-signed)
+          files: ./dist/*
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
