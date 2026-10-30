@@ -1,7 +1,7 @@
 From 0a68df3b6dd8cdd563c2a2255dd63806b0ac5a0a Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 23:04:03 +0800
-Subject: [PATCH 10/10] fix(discovery): resolve the endpoint before the connect
+Subject: [PATCH 10/11] fix(discovery): resolve the endpoint before the connect
  loop exists
 
 On mobile the host only starts when the user shares a screen, so the settings page could read its
