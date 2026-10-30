@@ -489,6 +489,16 @@ jobs:
         id: ndk
         with:
           ndk-version: r26b
+          add-to-path: true
+
+      - name: Install the host tools vcpkg needs
+        shell: bash
+        # vcpkg builds host-side helpers (aom among them) while installing the android
+        # triplet, and those need nasm plus a recent cmake.
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y nasm cmake ninja-build pkg-config
 
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
@@ -540,6 +550,14 @@ jobs:
           channel: "stable"
           flutter-version: ${{ env.FLUTTER_VERSION }}
           architecture: x64
+
+      - name: Patch flutter
+        shell: bash
+        # Upstream applies this to 3.24.x; without it the settings dropdown trips an assert.
+        run: |
+          set -euo pipefail
+          cd "$(dirname "$(dirname "$(which flutter)")")"
+          git apply "$GITHUB_WORKSPACE/.github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff"
 
       - name: Stage the native library
         shell: bash
