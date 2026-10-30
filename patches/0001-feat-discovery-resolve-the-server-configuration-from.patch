@@ -1,8 +1,8 @@
 From fc566394c1a65135202a44830b419422b7ae1d0c Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 10:09:51 +0800
-Subject: [PATCH 1/9] feat(discovery): resolve the server configuration from a
- discovery URL
+Subject: [PATCH 01/10] feat(discovery): resolve the server configuration from
+ a discovery URL
 
 Adds a discovery endpoint so the client can follow id_server, relay_server,
 api_server and key from one HTTPS/HTTP document instead of hard-coding them.

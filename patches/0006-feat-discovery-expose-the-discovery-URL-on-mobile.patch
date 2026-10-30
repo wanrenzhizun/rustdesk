@@ -1,7 +1,7 @@
 From 2181c298741ea1e205a7cfa595ebce661e1795b6 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 19:38:59 +0800
-Subject: [PATCH 6/9] feat(discovery): expose the discovery URL on mobile
+Subject: [PATCH 06/10] feat(discovery): expose the discovery URL on mobile
 
 The tile only existed on the desktop settings page, so the Android and iOS
 builds had no way to point the client at an endpoint document.

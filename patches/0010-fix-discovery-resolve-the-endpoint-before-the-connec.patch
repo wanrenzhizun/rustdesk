@@ -1,0 +1,103 @@
+From 0a68df3b6dd8cdd563c2a2255dd63806b0ac5a0a Mon Sep 17 00:00:00 2001
+From: huzhaolun <huzhaolun@qq.com>
+Date: Fri, 30 Oct 2026 23:04:03 +0800
+Subject: [PATCH 10/10] fix(discovery): resolve the endpoint before the connect
+ loop exists
+
+On mobile the host only starts when the user shares a screen, so the settings page could read its
+options while the endpoint had never been resolved and reported the public server. The first
+options read now waits for one resolution, bounded, and the mobile variant folds the answer into
+the map it returns.
+---
+ src/discovery.rs    | 42 ++++++++++++++++++++++++++++++++++++++++++
+ src/ui_interface.rs |  7 ++++++-
+ 2 files changed, 48 insertions(+), 1 deletion(-)
+
+diff --git a/src/discovery.rs b/src/discovery.rs
+index f4471ab3e..4ef78c274 100644
+--- a/src/discovery.rs
++++ b/src/discovery.rs
+@@ -18,6 +18,8 @@ const OPTION_ONLINE_SERVER: &str = "online-server";
+ 
+ const CACHE_TTL: Duration = Duration::from_secs(60);
+ const FETCH_TIMEOUT: Duration = Duration::from_secs(3);
++/// How long the first options read waits for the endpoint's answer.
++const FIRST_WAIT: Duration = Duration::from_secs(5);
+ const MAX_BODY_BYTES: u64 = 64 * 1024;
+ const KEY_LEN: usize = 44;
+ 
+@@ -119,6 +121,46 @@ fn drop_before_refetch() {
+     CACHE.lock().unwrap().last_attempt = None;
+ }
+ 
++/// Resolves the endpoint once on a worker thread, for callers that run before the connect loop.
++///
++/// The client UI reads its options before any server exists, so without a first resolution here
++/// it reports the public server until the host happens to start.
++/// Runs the first resolution on a worker thread and waits for it, bounded.
++///
++/// A caller that reads its options before the connect loop exists would otherwise report the
++/// public server for as long as the fetch takes, so the first read waits instead. Once the cache
++/// holds an answer the wait returns immediately, which is what every later read does.
++pub fn start_blocking() {
++    // A condvar rather than a channel: the value is read from many threads, and a channel's
++    // receiver is not Sync.
++    static DONE: std::sync::OnceLock<
++        (std::sync::Mutex<bool>, std::sync::Condvar),
++    > = std::sync::OnceLock::new();
++    static STARTED: std::sync::atomic::AtomicBool =
++        std::sync::atomic::AtomicBool::new(false);
++
++    let gate = DONE.get_or_init(|| (std::sync::Mutex::new(false), std::sync::Condvar::new()));
++    if !STARTED.swap(true, std::sync::atomic::Ordering::SeqCst) {
++        let _ = std::thread::Builder::new()
++            .name("discovery-first".to_owned())
++            .spawn(|| {
++                if let Ok(rt) = tokio::runtime::Builder::new_current_thread()
++                    .enable_all()
++                    .build()
++                {
++                    rt.block_on(sync());
++                }
++                let (lock, cv) = &*DONE.get().expect("gate");
++                *lock.lock().unwrap() = true;
++                cv.notify_all();
++            });
++    }
++    let (lock, cv) = gate;
++    let mut done = lock.lock().unwrap();
++    if !*done {
++        let _ = cv.wait_timeout(done, FIRST_WAIT);
++    }
++}
+ /// Injects the discovered servers into the runtime config when `discovery-url` is set.
+ ///
+ /// Called by the rendezvous mediator once at startup and again before every reconnect, so it has
+diff --git a/src/ui_interface.rs b/src/ui_interface.rs
+index 995d6d0cf..efb39c613 100644
+--- a/src/ui_interface.rs
++++ b/src/ui_interface.rs
+@@ -345,6 +345,9 @@ pub fn set_peer_option(id: String, name: String, value: String) {
+ 
+ #[inline]
+ pub fn get_options() -> String {
++    // Resolve the endpoint on the first read: on mobile nothing else starts it before the user
++    // shares a screen, and without it the settings page reports the public server.
++    crate::discovery::start_blocking();
+     let options = {
+         #[cfg(not(any(target_os = "android", target_os = "ios")))]
+         {
+@@ -352,7 +355,9 @@ pub fn get_options() -> String {
+         }
+         #[cfg(any(target_os = "android", target_os = "ios"))]
+         {
+-            Config::get_options()
++            let mut options = Config::get_options();
++            crate::discovery::overlay_options(&mut options);
++            options
+         }
+     };
+     let mut m = serde_json::Map::new();
+-- 
+2.56.0.windows.2
+

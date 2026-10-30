@@ -1,7 +1,7 @@
 From f87de5eed5144ec5b4f8b854c70ed36f4183eea2 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 21:28:11 +0800
-Subject: [PATCH 7/9] fix(discovery): let the endpoint win over the host
+Subject: [PATCH 07/10] fix(discovery): let the endpoint win over the host
  service
 
 On an installed Windows build the client asks the service for the rendezvous
