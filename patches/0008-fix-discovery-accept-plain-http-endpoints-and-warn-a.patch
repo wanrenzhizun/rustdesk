@@ -1,7 +1,7 @@
-From e65d060368e000e7c519a27c11dd7151969955be Mon Sep 17 00:00:00 2001
+From b877b7cad4b850327ebcc8166afe46bb95b9cb5a Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Thu, 29 Oct 2026 17:42:14 +0800
-Subject: [PATCH 08/10] fix(discovery): accept plain http endpoints and warn
+Subject: [PATCH 08/11] fix(discovery): accept plain http endpoints and warn
  about them
 
 The URL was rejected unless it started with https://, which broke self-hosted
@@ -10,61 +10,61 @@ warning appears under the field while a plain http address is typed.
 ---
  flutter/lib/common.dart                |  3 ++-
  flutter/lib/mobile/widgets/dialog.dart | 21 ++++++++++++++++++++-
- src/lang/ar.rs                         |  1 +
- src/lang/az.rs                         |  1 +
- src/lang/be.rs                         |  1 +
- src/lang/bg.rs                         |  1 +
- src/lang/ca.rs                         |  1 +
- src/lang/cn.rs                         |  1 +
- src/lang/cs.rs                         |  1 +
- src/lang/da.rs                         |  1 +
- src/lang/de.rs                         |  1 +
- src/lang/el.rs                         |  1 +
+ src/lang/ar.rs                         |  2 ++
+ src/lang/az.rs                         |  2 ++
+ src/lang/be.rs                         |  2 ++
+ src/lang/bg.rs                         |  2 ++
+ src/lang/ca.rs                         |  2 ++
+ src/lang/cn.rs                         |  2 ++
+ src/lang/cs.rs                         |  2 ++
+ src/lang/da.rs                         |  2 ++
+ src/lang/de.rs                         |  2 ++
+ src/lang/el.rs                         |  2 ++
  src/lang/en.rs                         |  1 +
- src/lang/eo.rs                         |  1 +
- src/lang/es.rs                         |  1 +
- src/lang/et.rs                         |  1 +
- src/lang/eu.rs                         |  1 +
- src/lang/fa.rs                         |  1 +
- src/lang/fi.rs                         |  1 +
- src/lang/fr.rs                         |  1 +
- src/lang/ge.rs                         |  1 +
- src/lang/gl.rs                         |  1 +
- src/lang/gu.rs                         |  1 +
- src/lang/he.rs                         |  1 +
- src/lang/hi.rs                         |  1 +
- src/lang/hr.rs                         |  1 +
- src/lang/hu.rs                         |  1 +
- src/lang/id.rs                         |  1 +
- src/lang/it.rs                         |  1 +
- src/lang/ja.rs                         |  1 +
- src/lang/ko.rs                         |  1 +
- src/lang/kz.rs                         |  1 +
- src/lang/lt.rs                         |  1 +
- src/lang/lv.rs                         |  1 +
- src/lang/ml.rs                         |  1 +
- src/lang/nb.rs                         |  1 +
- src/lang/nl.rs                         |  1 +
- src/lang/pl.rs                         |  1 +
- src/lang/pt_BR.rs                      |  1 +
- src/lang/pt_PT.rs                      |  1 +
- src/lang/ro.rs                         |  1 +
- src/lang/ru.rs                         |  1 +
- src/lang/sc.rs                         |  1 +
- src/lang/sk.rs                         |  1 +
- src/lang/sl.rs                         |  1 +
- src/lang/sq.rs                         |  1 +
- src/lang/sr.rs                         |  1 +
- src/lang/sv.rs                         |  1 +
- src/lang/ta.rs                         |  1 +
- src/lang/template.rs                   |  1 +
- src/lang/th.rs                         |  1 +
- src/lang/tr.rs                         |  1 +
- src/lang/tw.rs                         |  1 +
- src/lang/uk.rs                         |  1 +
- src/lang/ur.rs                         |  1 +
- src/lang/vi.rs                         |  1 +
- 56 files changed, 76 insertions(+), 2 deletions(-)
+ src/lang/eo.rs                         |  2 ++
+ src/lang/es.rs                         |  2 ++
+ src/lang/et.rs                         |  2 ++
+ src/lang/eu.rs                         |  2 ++
+ src/lang/fa.rs                         |  2 ++
+ src/lang/fi.rs                         |  2 ++
+ src/lang/fr.rs                         |  2 ++
+ src/lang/ge.rs                         |  2 ++
+ src/lang/gl.rs                         |  2 ++
+ src/lang/gu.rs                         |  2 ++
+ src/lang/he.rs                         |  2 ++
+ src/lang/hi.rs                         |  2 ++
+ src/lang/hr.rs                         |  2 ++
+ src/lang/hu.rs                         |  2 ++
+ src/lang/id.rs                         |  2 ++
+ src/lang/it.rs                         |  2 ++
+ src/lang/ja.rs                         |  2 ++
+ src/lang/ko.rs                         |  2 ++
+ src/lang/kz.rs                         |  2 ++
+ src/lang/lt.rs                         |  2 ++
+ src/lang/lv.rs                         |  2 ++
+ src/lang/ml.rs                         |  2 ++
+ src/lang/nb.rs                         |  2 ++
+ src/lang/nl.rs                         |  2 ++
+ src/lang/pl.rs                         |  2 ++
+ src/lang/pt_BR.rs                      |  2 ++
+ src/lang/pt_PT.rs                      |  2 ++
+ src/lang/ro.rs                         |  2 ++
+ src/lang/ru.rs                         |  2 ++
+ src/lang/sc.rs                         |  2 ++
+ src/lang/sk.rs                         |  2 ++
+ src/lang/sl.rs                         |  2 ++
+ src/lang/sq.rs                         |  2 ++
+ src/lang/sr.rs                         |  2 ++
+ src/lang/sv.rs                         |  2 ++
+ src/lang/ta.rs                         |  2 ++
+ src/lang/template.rs                   |  2 ++
+ src/lang/th.rs                         |  2 ++
+ src/lang/tr.rs                         |  2 ++
+ src/lang/tw.rs                         |  2 ++
+ src/lang/uk.rs                         |  2 ++
+ src/lang/ur.rs                         |  2 ++
+ src/lang/vi.rs                         |  2 ++
+ 56 files changed, 129 insertions(+), 2 deletions(-)
 
 diff --git a/flutter/lib/common.dart b/flutter/lib/common.dart
 index 67d7104f1..8c17137b3 100644
@@ -122,113 +122,123 @@ index 3b6de7148..ba423405c 100644
                )),
          ),
 diff --git a/src/lang/ar.rs b/src/lang/ar.rs
-index f4e495846..fd5e03f63 100644
+index f22825069..9ff12a5e2 100644
 --- a/src/lang/ar.rs
 +++ b/src/lang/ar.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/az.rs b/src/lang/az.rs
-index f1273281a..3326b671e 100644
+index 84545f642..a015196cb 100644
 --- a/src/lang/az.rs
 +++ b/src/lang/az.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/be.rs b/src/lang/be.rs
-index 1164a1584..d7ad5c8db 100644
+index 1e36617bb..763b7fd16 100644
 --- a/src/lang/be.rs
 +++ b/src/lang/be.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/bg.rs b/src/lang/bg.rs
-index 9013a3c75..628fb1911 100644
+index faabfd916..5b261274a 100644
 --- a/src/lang/bg.rs
 +++ b/src/lang/bg.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/ca.rs b/src/lang/ca.rs
-index 28a54a991..0e190fac7 100644
+index 00cd39b3b..703ea5183 100644
 --- a/src/lang/ca.rs
 +++ b/src/lang/ca.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/cn.rs b/src/lang/cn.rs
-index 32f61389b..37e841b2a 100644
+index 9a2c48493..ff04b92e3 100644
 --- a/src/lang/cn.rs
 +++ b/src/lang/cn.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", "请选择 Android → media。"),
+@@ -826,5 +826,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", "发现服务地址"),
          ("discovery_url_tip", "留空则不启用。填写后，服务器地址与密钥将由该地址下发，变化时自动跟随。"),
+ 
 +        ("discovery_url_insecure_tip", "该地址使用明文 HTTP，网络上的其他人可以看到并篡改返回内容。除非你信任当前网络，否则请使用 HTTPS。"),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/cs.rs b/src/lang/cs.rs
-index db4fb4605..d7ecebe2d 100644
+index f9f973338..b81d3787f 100644
 --- a/src/lang/cs.rs
 +++ b/src/lang/cs.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/da.rs b/src/lang/da.rs
-index 348317b33..c64671817 100644
+index 7c0595df5..c75e4ef46 100644
 --- a/src/lang/da.rs
 +++ b/src/lang/da.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/de.rs b/src/lang/de.rs
-index b47780e68..b9ef833c8 100644
+index 9db5ccec7..38995a200 100644
 --- a/src/lang/de.rs
 +++ b/src/lang/de.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/el.rs b/src/lang/el.rs
-index d0863d447..ebdf62525 100644
+index 0e65c0990..ad044fd46 100644
 --- a/src/lang/el.rs
 +++ b/src/lang/el.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/en.rs b/src/lang/en.rs
@@ -243,477 +253,519 @@ index b73840818..3dc1cc4a5 100644
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/eo.rs b/src/lang/eo.rs
-index 99d6d130c..4e98686f7 100644
+index e492240bb..9c4280ef6 100644
 --- a/src/lang/eo.rs
 +++ b/src/lang/eo.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/es.rs b/src/lang/es.rs
-index 581834440..71a60b6c6 100644
+index a8b0cef8d..423e81b76 100644
 --- a/src/lang/es.rs
 +++ b/src/lang/es.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -866,5 +866,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/et.rs b/src/lang/et.rs
-index 815f019db..d8b4a2829 100644
+index 78e5dcc6a..fb80e2903 100644
 --- a/src/lang/et.rs
 +++ b/src/lang/et.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/eu.rs b/src/lang/eu.rs
-index 84ff52b06..4f4703ba3 100644
+index 5df4506f0..ad352d309 100644
 --- a/src/lang/eu.rs
 +++ b/src/lang/eu.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/fa.rs b/src/lang/fa.rs
-index e231784e4..2ccc3f92c 100644
+index 39f9cfb04..197575b72 100644
 --- a/src/lang/fa.rs
 +++ b/src/lang/fa.rs
-@@ -821,5 +821,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -832,5 +832,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/fi.rs b/src/lang/fi.rs
-index 8a1755d09..051ff64ee 100644
+index a23df4aca..a180d3b1b 100644
 --- a/src/lang/fi.rs
 +++ b/src/lang/fi.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/fr.rs b/src/lang/fr.rs
-index 9ab7b7667..9c9779b86 100644
+index 9a2dd74bb..a280a0fef 100644
 --- a/src/lang/fr.rs
 +++ b/src/lang/fr.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/ge.rs b/src/lang/ge.rs
-index d17322ff6..f8f8d58bc 100644
+index c692c3c68..1fa0066e9 100644
 --- a/src/lang/ge.rs
 +++ b/src/lang/ge.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/gl.rs b/src/lang/gl.rs
-index 7572ec752..b70e97b31 100644
+index 60c079e0b..a70cc44a7 100644
 --- a/src/lang/gl.rs
 +++ b/src/lang/gl.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/gu.rs b/src/lang/gu.rs
-index 2cfa973f4..05778a6b9 100644
+index 15687f397..2d61f5850 100644
 --- a/src/lang/gu.rs
 +++ b/src/lang/gu.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/he.rs b/src/lang/he.rs
-index ab4accb00..189cffa20 100644
+index 03da0eead..165cea616 100644
 --- a/src/lang/he.rs
 +++ b/src/lang/he.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/hi.rs b/src/lang/hi.rs
-index df767d40e..30258f4aa 100644
+index 3947c6fa0..e8ba8762e 100644
 --- a/src/lang/hi.rs
 +++ b/src/lang/hi.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/hr.rs b/src/lang/hr.rs
-index 8756053f6..6d229bad9 100644
+index 817bc0850..a9add63f7 100644
 --- a/src/lang/hr.rs
 +++ b/src/lang/hr.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/hu.rs b/src/lang/hu.rs
-index 7165e20ef..3d0392270 100644
+index edbbc7b11..01dc43095 100644
 --- a/src/lang/hu.rs
 +++ b/src/lang/hu.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/id.rs b/src/lang/id.rs
-index 6182d7d7c..c4c750167 100644
+index 35e7c401f..4b89bf3e4 100644
 --- a/src/lang/id.rs
 +++ b/src/lang/id.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/it.rs b/src/lang/it.rs
-index 742ea4218..77b69c2c4 100644
+index e587976e1..8e248f915 100644
 --- a/src/lang/it.rs
 +++ b/src/lang/it.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -832,5 +832,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/ja.rs b/src/lang/ja.rs
-index e9153e24a..d3c2d416b 100644
+index 22161b9c9..a12a4cd31 100644
 --- a/src/lang/ja.rs
 +++ b/src/lang/ja.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/ko.rs b/src/lang/ko.rs
-index 51047aefa..550e2b9f9 100644
+index f64e7135d..049ad6c13 100644
 --- a/src/lang/ko.rs
 +++ b/src/lang/ko.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -832,5 +832,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/kz.rs b/src/lang/kz.rs
-index 8a25573c5..2e388b557 100644
+index 0da4b7366..01c06844a 100644
 --- a/src/lang/kz.rs
 +++ b/src/lang/kz.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/lt.rs b/src/lang/lt.rs
-index 4f082b0fa..c3e97f3f8 100644
+index 778f66e74..ecbf06753 100644
 --- a/src/lang/lt.rs
 +++ b/src/lang/lt.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/lv.rs b/src/lang/lv.rs
-index 2b0cd21b5..9608fa5d8 100644
+index 09676912b..218d061cf 100644
 --- a/src/lang/lv.rs
 +++ b/src/lang/lv.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/ml.rs b/src/lang/ml.rs
-index 96e960c76..b52bcfb43 100644
+index 98b33d727..a3af26a7c 100644
 --- a/src/lang/ml.rs
 +++ b/src/lang/ml.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/nb.rs b/src/lang/nb.rs
-index 3ed1171c8..950a9b5c4 100644
+index 1df6add59..f92d73cf0 100644
 --- a/src/lang/nb.rs
 +++ b/src/lang/nb.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/nl.rs b/src/lang/nl.rs
-index 7da0b7b9b..d7159e2c8 100644
+index 035af1c82..c7730f0c5 100644
 --- a/src/lang/nl.rs
 +++ b/src/lang/nl.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -832,5 +832,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/pl.rs b/src/lang/pl.rs
-index 40d8b6115..44f1648a4 100644
+index bee0a975e..62dad6481 100644
 --- a/src/lang/pl.rs
 +++ b/src/lang/pl.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -834,5 +834,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/pt_BR.rs b/src/lang/pt_BR.rs
-index 82d62b22e..57f106d81 100644
+index 11f696ed2..17f04d9db 100644
 --- a/src/lang/pt_BR.rs
 +++ b/src/lang/pt_BR.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -834,5 +834,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/pt_PT.rs b/src/lang/pt_PT.rs
-index 4d916279f..096d06fa6 100644
+index 024b0dc3c..834c09611 100644
 --- a/src/lang/pt_PT.rs
 +++ b/src/lang/pt_PT.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -832,5 +832,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/ro.rs b/src/lang/ro.rs
-index 8bc934454..fa6514803 100644
+index cafc8a398..c03c69d06 100644
 --- a/src/lang/ro.rs
 +++ b/src/lang/ro.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/ru.rs b/src/lang/ru.rs
-index 8f2ca512e..baa10038a 100644
+index bd67ee89a..e33b79034 100644
 --- a/src/lang/ru.rs
 +++ b/src/lang/ru.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -834,5 +834,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/sc.rs b/src/lang/sc.rs
-index c234b4ac6..4b7633ca8 100644
+index e2341d379..2320e0388 100644
 --- a/src/lang/sc.rs
 +++ b/src/lang/sc.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -866,5 +866,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/sk.rs b/src/lang/sk.rs
-index 78aff810a..d42bf34dd 100644
+index 2a62d30eb..c704360eb 100644
 --- a/src/lang/sk.rs
 +++ b/src/lang/sk.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/sl.rs b/src/lang/sl.rs
-index 3d889bfe3..3f3b843f4 100644
+index 4b20feaf1..b4bf5511e 100644
 --- a/src/lang/sl.rs
 +++ b/src/lang/sl.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/sq.rs b/src/lang/sq.rs
-index e46c7329f..d082f52b4 100644
+index 6f565888f..61d87f071 100644
 --- a/src/lang/sq.rs
 +++ b/src/lang/sq.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/sr.rs b/src/lang/sr.rs
-index 19c5c58cf..3ddf6aa4c 100644
+index 7e970ae57..93a6d0597 100644
 --- a/src/lang/sr.rs
 +++ b/src/lang/sr.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/sv.rs b/src/lang/sv.rs
-index 5b65a80a7..1794e921c 100644
+index 10d831149..f952a5198 100644
 --- a/src/lang/sv.rs
 +++ b/src/lang/sv.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/ta.rs b/src/lang/ta.rs
-index 9ae19803f..e45142a40 100644
+index db2e27803..b7704d0f8 100644
 --- a/src/lang/ta.rs
 +++ b/src/lang/ta.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/template.rs b/src/lang/template.rs
-index e38ce2db4..1673dd770 100644
+index 6b95c66f8..283284618 100644
 --- a/src/lang/template.rs
 +++ b/src/lang/template.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -826,5 +826,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/th.rs b/src/lang/th.rs
-index 954a24584..82705996e 100644
+index 31d9a3fb1..4ee4e31a8 100644
 --- a/src/lang/th.rs
 +++ b/src/lang/th.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/tr.rs b/src/lang/tr.rs
-index f36555490..287e3fc29 100644
+index 12f98fc9b..cb46dcf43 100644
 --- a/src/lang/tr.rs
 +++ b/src/lang/tr.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -832,5 +832,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/tw.rs b/src/lang/tw.rs
-index 6af9956b7..df0b50db6 100644
+index 1f96d6593..1a17f1361 100644
 --- a/src/lang/tw.rs
 +++ b/src/lang/tw.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", "請選擇 Android → media。"),
+@@ -826,5 +826,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", "發現服務位址"),
          ("discovery_url_tip", "留空則不啟用。填寫後，伺服器位址與金鑰將由該位址下發，變化時自動跟隨。"),
+ 
 +        ("discovery_url_insecure_tip", "該位址使用明文 HTTP，網路上的其他人可以看到並竄改回傳內容。除非你信任目前網路，否則請使用 HTTPS。"),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/uk.rs b/src/lang/uk.rs
-index edfbc3255..92c2f7ac3 100644
+index 3b248c9b7..ccd9e80a6 100644
 --- a/src/lang/uk.rs
 +++ b/src/lang/uk.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -866,5 +866,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 diff --git a/src/lang/ur.rs b/src/lang/ur.rs
-index c4b826589..35c54e852 100644
+index 0bcfd64e2..4e7c94b14 100644
 --- a/src/lang/ur.rs
 +++ b/src/lang/ur.rs
-@@ -823,6 +823,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
- 
 diff --git a/src/lang/vi.rs b/src/lang/vi.rs
-index 040e97978..ce2ab6e52 100644
+index ae477b4d2..22ff210f2 100644
 --- a/src/lang/vi.rs
 +++ b/src/lang/vi.rs
-@@ -823,5 +823,6 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
-         ("Please select Android → media.", ""),
+@@ -867,5 +867,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
          ("Discovery URL", ""),
          ("discovery_url_tip", ""),
+ 
 +        ("discovery_url_insecure_tip", ""),
++
      ].iter().cloned().collect();
  }
 -- 

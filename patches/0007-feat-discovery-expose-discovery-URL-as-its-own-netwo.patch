@@ -1,7 +1,7 @@
-From fa4e89e37345ed4db384cba78afdf6e38512d373 Mon Sep 17 00:00:00 2001
+From 284d4d014fb2ea6984f78ca5777acb3e20aa211c Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Thu, 29 Oct 2026 14:29:23 +0800
-Subject: [PATCH 07/10] feat(discovery): expose discovery URL as its own
+Subject: [PATCH 07/11] feat(discovery): expose discovery URL as its own
  network setting
 
 A dedicated tile next to ID/Relay Server opens a single field dialog, so the
@@ -13,10 +13,10 @@ discovery-url option; the shareable server config keeps carrying the field.
  2 files changed, 105 insertions(+), 24 deletions(-)
 
 diff --git a/flutter/lib/desktop/pages/desktop_setting_page.dart b/flutter/lib/desktop/pages/desktop_setting_page.dart
-index 4560b3d69..abd7f3353 100644
+index 730d75827..e6ac18ff9 100644
 --- a/flutter/lib/desktop/pages/desktop_setting_page.dart
 +++ b/flutter/lib/desktop/pages/desktop_setting_page.dart
-@@ -1910,6 +1910,13 @@ class _NetworkState extends State<_Network> with AutomaticKeepAliveClientMixin {
+@@ -1931,6 +1931,13 @@ class _NetworkState extends State<_Network> with AutomaticKeepAliveClientMixin {
                    title: 'ID/Relay Server',
                    onTap: () => showServerSettings(gFFI.dialogManager, setState),
                  ),

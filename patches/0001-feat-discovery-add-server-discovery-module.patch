@@ -1,7 +1,7 @@
-From 5899e86b8dd2b79840e236bd05ed46835335f51b Mon Sep 17 00:00:00 2001
+From 9ab03bb762f8b3cee5187b75697eef5340e06743 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Wed, 28 Oct 2026 20:37:15 +0800
-Subject: [PATCH 01/10] feat(discovery): add server discovery module
+Subject: [PATCH 01/11] feat(discovery): add server discovery module
 
 Fetch id_server/relay_server/api_server/key from a user configured HTTPS
 endpoint and inject them into the runtime config without persisting them.
@@ -391,10 +391,10 @@ index 000000000..306b39604
 +    }
 +}
 diff --git a/src/lib.rs b/src/lib.rs
-index 69ca7faf3..893c58138 100644
+index f6e48a1be..590b35e01 100644
 --- a/src/lib.rs
 +++ b/src/lib.rs
-@@ -48,6 +48,7 @@ mod clipboard;
+@@ -49,6 +49,7 @@ mod clipboard;
  #[cfg(not(any(target_os = "android", target_os = "ios")))]
  pub mod core_main;
  mod custom_server;

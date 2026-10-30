@@ -1,7 +1,7 @@
-From f72b423368cad1b2cf143545093cd0f4d435d3cb Mon Sep 17 00:00:00 2001
+From 2e6d360bf863e3b07336fb847eb3934d644a53eb Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Thu, 29 Oct 2026 18:46:32 +0800
-Subject: [PATCH 09/10] fix(discovery): apply a saved endpoint immediately
+Subject: [PATCH 09/11] fix(discovery): apply a saved endpoint immediately
 
 Saving discovery-url only asked the mediator to reconnect, so a stopped
 service - which never runs the reconnect loop - kept the old servers until the
@@ -69,10 +69,10 @@ index 306b39604..16fe03653 100644
  pub fn api_server() -> Option<String> {
      non_empty(STATE.lock().unwrap().active.api_server.clone())
 diff --git a/src/flutter_ffi.rs b/src/flutter_ffi.rs
-index 8f2b030ee..153d3400e 100644
+index 02f127700..fcb853027 100644
 --- a/src/flutter_ffi.rs
 +++ b/src/flutter_ffi.rs
-@@ -1076,8 +1076,9 @@ pub fn main_set_option(key: String, value: String) {
+@@ -1085,8 +1085,9 @@ pub fn main_set_option(key: String, value: String) -> hbb_common::anyhow::Result
          set_option(key, value.clone());
      }
      if is_discovery_url {
@@ -83,7 +83,7 @@ index 8f2b030ee..153d3400e 100644
 +        crate::discovery::refresh_blocking();
          crate::rendezvous_mediator::RendezvousMediator::restart();
      }
- }
+     Ok(())
 -- 
 2.56.0.windows.2
 

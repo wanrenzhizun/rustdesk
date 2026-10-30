@@ -1,0 +1,20 @@
+From 7101d5491c652c17c8c0a03c26bdd81f9ddfaf67 Mon Sep 17 00:00:00 2001
+From: huzhaolun <huzhaolun@qq.com>
+Date: Fri, 30 Oct 2026 09:55:16 +0800
+Subject: [PATCH 11/11] chore: track the hbb_common commit this tree builds
+ against
+
+---
+ libs/hbb_common | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libs/hbb_common b/libs/hbb_common
+index edefa08b7..fae47e024 160000
+--- a/libs/hbb_common
++++ b/libs/hbb_common
+@@ -1 +1 @@
+-Subproject commit edefa08b798b7fbf70b274a4cdbf701c9e06f7a3
++Subproject commit fae47e024dd83cef6aaecde0aa7d11731df11649
+-- 
+2.56.0.windows.2
+

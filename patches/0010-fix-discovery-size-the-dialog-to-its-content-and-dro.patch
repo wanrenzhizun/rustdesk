@@ -1,7 +1,7 @@
-From a844acc8436cb9302bc0e70e87204b0f1ecb4b19 Mon Sep 17 00:00:00 2001
+From 9b6a4b4855966e0fc7987e35ae5eeefa1d657240 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 09:34:44 +0800
-Subject: [PATCH 10/10] fix(discovery): size the dialog to its content and drop
+Subject: [PATCH 10/11] fix(discovery): size the dialog to its content and drop
  the public-server hint
 
 The dialog only constrained its width, so AlertDialog stretched a one-field
