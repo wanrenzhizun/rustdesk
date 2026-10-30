@@ -460,7 +460,7 @@ jobs:
   package-android-apk:
     name: Android APK (self-signed)
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.package }}
-    needs: [verify-patches]
+    needs: [verify-patches, generate-bridge]
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -477,6 +477,12 @@ jobs:
           for f in "${files[@]}"; do
             git apply --3way --whitespace=nowarn "$f"
           done
+
+      - name: Restore generated bridge files
+        uses: actions/download-artifact@v4
+        with:
+          name: bridge-artifact-flutter-3.44
+          path: ./
 
       - name: Install Rust toolchain with the Android target
         uses: dtolnay/rust-toolchain@stable
