@@ -61,6 +61,8 @@ struct State {
     active: Discovered,
     /// The executable level rendezvous server we replaced, kept to put it back on reset.
     previous_exe_server: Option<String>,
+    /// The option values we replaced, kept for the same reason.
+    previous_options: Option<Vec<(String, String)>>,
 }
 
 static STATE: Mutex<State> = Mutex::new(State {
@@ -72,6 +74,7 @@ static STATE: Mutex<State> = Mutex::new(State {
         key: String::new(),
     },
     previous_exe_server: None,
+    previous_options: None,
 });
 
 /// Watches `discovery-url` and applies a change the moment it happens.
@@ -295,6 +298,17 @@ impl State {
     }
 }
 
+/// The options the endpoint takes over, paired with the field that carries their value.
+fn announced(value: &Discovered) -> [(&'static str, &String); 5] {
+    [
+        ("custom-rendezvous-server", &value.id_server),
+        ("relay-server", &value.relay_server),
+        ("api-server", &value.api_server),
+        ("online-server", &value.online_server),
+        ("key", &value.key),
+    ]
+}
+
 fn apply(value: Option<&Discovered>) {
     let mut state = STATE.lock().unwrap();
     match value {
@@ -314,18 +328,22 @@ fn apply_value(state: &mut State, value: &Discovered) {
             *exe_rendezvous_server = value.id_server.clone();
         }
     }
-    for (announced, applied, option) in [
-        (&value.relay_server, &state.active.relay_server, "relay-server"),
-        (&value.api_server, &state.active.api_server, "api-server"),
-        (
-            &value.online_server,
-            &state.active.online_server,
-            "online-server",
-        ),
-        (&value.key, &state.active.key, "key"),
-    ] {
-        if !announced.is_empty() && announced != applied {
-            log::info!("discovery: {option} set to {announced}");
+    // Writing these into the config is what makes the endpoint's choice hold everywhere: the
+    // read paths that go to the config rather than to this process's state, a second process,
+    // and a cold start that resolves before the first fetch returns. The replaced values are
+    // kept so a cleared endpoint puts the manual settings back.
+    if state.previous_options.is_none() {
+        state.previous_options = Some(
+            announced(value)
+                .iter()
+                .map(|(option, _)| ((*option).to_owned(), Config::get_option(option)))
+                .collect(),
+        );
+    }
+    for (option, wanted) in announced(value) {
+        if !wanted.is_empty() && Config::get_option(option) != *wanted {
+            log::info!("discovery: {option} set to {wanted}");
+            Config::set_option(option.to_owned(), wanted.clone());
         }
     }
     state.active = value.clone();
@@ -337,6 +355,14 @@ fn restore(state: &mut State) {
         if *exe_rendezvous_server != previous {
             log::info!("discovery: rendezvous server restored to {previous:?}");
             *exe_rendezvous_server = previous;
+        }
+    }
+    if let Some(previous) = state.previous_options.take() {
+        for (option, value) in previous {
+            if Config::get_option(&option) != value {
+                log::info!("discovery: {option} restored to {value:?}");
+                Config::set_option(option, value);
+            }
         }
     }
     state.active = Discovered::default();
