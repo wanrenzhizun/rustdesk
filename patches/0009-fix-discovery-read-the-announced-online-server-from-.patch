@@ -1,7 +1,7 @@
 From aaa8e4217e07f88e0c085b1c931aa8b465b57169 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 22:08:27 +0800
-Subject: [PATCH 09/11] fix(discovery): read the announced online server from
+Subject: [PATCH 09/12] fix(discovery): read the announced online server from
  the options too
 
 The client derives the online-status address as the rendezvous port minus one, which only holds
@@ -33,5 +33,5 @@ index 7a535b84c..f4471ab3e 100644
  
  /// The announced relay server, when it is currently overridden.
 -- 
-2.56.0
+2.56.0.windows.2
 

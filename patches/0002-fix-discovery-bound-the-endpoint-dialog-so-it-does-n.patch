@@ -1,7 +1,7 @@
 From 7f1c9f36fd0d714884a27f4e5ce29b0eb9af7849 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 10:51:05 +0800
-Subject: [PATCH 02/11] fix(discovery): bound the endpoint dialog so it does
+Subject: [PATCH 02/12] fix(discovery): bound the endpoint dialog so it does
  not fill the window
 
 AlertDialog stretched the one-field form to the full height, leaving a large
@@ -52,5 +52,5 @@ index 977632e0d..ca3621f24 100644
            child: Obx(() => Column(
                  mainAxisSize: MainAxisSize.min,
 -- 
-2.56.0
+2.56.0.windows.2
 

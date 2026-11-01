@@ -1,7 +1,7 @@
 From 811e8048b1829247c7305c14d4ccf19e921ece49 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 11:12:10 +0800
-Subject: [PATCH 03/11] feat(discovery): let the endpoint announce the
+Subject: [PATCH 03/12] feat(discovery): let the endpoint announce the
  online-status server
 
 The client derives the online-status port as the rendezvous port minus one,
@@ -130,5 +130,5 @@ index a1ff1ebba..6b0b223cb 100644
      fn parse_json_passes_api_server_through_untouched() {
          let parsed =
 -- 
-2.56.0
+2.56.0.windows.2
 

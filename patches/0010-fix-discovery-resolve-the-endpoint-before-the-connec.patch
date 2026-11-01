@@ -1,7 +1,7 @@
 From 18a31445cfaa4656385c512a103880b72ac5357a Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 23:04:03 +0800
-Subject: [PATCH 10/11] fix(discovery): resolve the endpoint before the connect
+Subject: [PATCH 10/12] fix(discovery): resolve the endpoint before the connect
  loop exists
 
 On mobile the host only starts when the user shares a screen, so the settings page could read its
@@ -99,5 +99,5 @@ index 995d6d0cf..efb39c613 100644
      };
      let mut m = serde_json::Map::new();
 -- 
-2.56.0
+2.56.0.windows.2
 

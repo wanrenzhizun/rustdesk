@@ -1,7 +1,7 @@
 From e108da0a01b80c3096e0232569607bece4d3eae6 Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 21:28:11 +0800
-Subject: [PATCH 07/11] fix(discovery): let the endpoint win over the host
+Subject: [PATCH 07/12] fix(discovery): let the endpoint win over the host
  service
 
 On an installed Windows build the client asks the service for the rendezvous
@@ -38,5 +38,5 @@ index 843ae2a7f..d2e7f00c5 100644
  }
  
 -- 
-2.56.0
+2.56.0.windows.2
 

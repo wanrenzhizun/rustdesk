@@ -1,0 +1,107 @@
+From bb24c9633077c0d8a6ae4a50d41d23ba20278753 Mon Sep 17 00:00:00 2001
+From: huzhaolun <huzhaolun@qq.com>
+Date: Sun, 1 Nov 2026 09:40:57 +0800
+Subject: [PATCH 12/12] fix(discovery): write the endpoint's servers into the
+ config
+
+Only the rendezvous server reached the runtime override; the relay, API, online and key values
+were merely logged, so they lived only in the resolving process. Everything that reads the config
+instead of that state, and every cold start before the first fetch returns, therefore kept the
+public settings until some later action refreshed the options. The announced values are now
+written to the config, and the replaced ones are put back when the endpoint is cleared.
+---
+ src/discovery.rs | 50 ++++++++++++++++++++++++++++++++++++------------
+ 1 file changed, 38 insertions(+), 12 deletions(-)
+
+diff --git a/src/discovery.rs b/src/discovery.rs
+index b1083a847..6fbb1e7cf 100644
+--- a/src/discovery.rs
++++ b/src/discovery.rs
+@@ -61,6 +61,8 @@ struct State {
+     active: Discovered,
+     /// The executable level rendezvous server we replaced, kept to put it back on reset.
+     previous_exe_server: Option<String>,
++    /// The option values we replaced, kept for the same reason.
++    previous_options: Option<Vec<(String, String)>>,
+ }
+ 
+ static STATE: Mutex<State> = Mutex::new(State {
+@@ -72,6 +74,7 @@ static STATE: Mutex<State> = Mutex::new(State {
+         key: String::new(),
+     },
+     previous_exe_server: None,
++    previous_options: None,
+ });
+ 
+ /// Watches `discovery-url` and applies a change the moment it happens.
+@@ -295,6 +298,17 @@ impl State {
+     }
+ }
+ 
++/// The options the endpoint takes over, paired with the field that carries their value.
++fn announced(value: &Discovered) -> [(&'static str, &String); 5] {
++    [
++        ("custom-rendezvous-server", &value.id_server),
++        ("relay-server", &value.relay_server),
++        ("api-server", &value.api_server),
++        ("online-server", &value.online_server),
++        ("key", &value.key),
++    ]
++}
++
+ fn apply(value: Option<&Discovered>) {
+     let mut state = STATE.lock().unwrap();
+     match value {
+@@ -314,18 +328,22 @@ fn apply_value(state: &mut State, value: &Discovered) {
+             *exe_rendezvous_server = value.id_server.clone();
+         }
+     }
+-    for (announced, applied, option) in [
+-        (&value.relay_server, &state.active.relay_server, "relay-server"),
+-        (&value.api_server, &state.active.api_server, "api-server"),
+-        (
+-            &value.online_server,
+-            &state.active.online_server,
+-            "online-server",
+-        ),
+-        (&value.key, &state.active.key, "key"),
+-    ] {
+-        if !announced.is_empty() && announced != applied {
+-            log::info!("discovery: {option} set to {announced}");
++    // Writing these into the config is what makes the endpoint's choice hold everywhere: the
++    // read paths that go to the config rather than to this process's state, a second process,
++    // and a cold start that resolves before the first fetch returns. The replaced values are
++    // kept so a cleared endpoint puts the manual settings back.
++    if state.previous_options.is_none() {
++        state.previous_options = Some(
++            announced(value)
++                .iter()
++                .map(|(option, _)| ((*option).to_owned(), Config::get_option(option)))
++                .collect(),
++        );
++    }
++    for (option, wanted) in announced(value) {
++        if !wanted.is_empty() && Config::get_option(option) != *wanted {
++            log::info!("discovery: {option} set to {wanted}");
++            Config::set_option(option.to_owned(), wanted.clone());
+         }
+     }
+     state.active = value.clone();
+@@ -339,6 +357,14 @@ fn restore(state: &mut State) {
+             *exe_rendezvous_server = previous;
+         }
+     }
++    if let Some(previous) = state.previous_options.take() {
++        for (option, value) in previous {
++            if Config::get_option(&option) != value {
++                log::info!("discovery: {option} restored to {value:?}");
++                Config::set_option(option, value);
++            }
++        }
++    }
+     state.active = Discovered::default();
+ }
+ 
+-- 
+2.56.0.windows.2
+

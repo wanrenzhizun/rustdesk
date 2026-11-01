@@ -1,7 +1,7 @@
 From e4404a37215570fe90e3aafa9c548d382017d10c Mon Sep 17 00:00:00 2001
 From: huzhaolun <huzhaolun@qq.com>
 Date: Fri, 30 Oct 2026 21:47:28 +0800
-Subject: [PATCH 08/11] fix(discovery): hand the endpoint's servers to the
+Subject: [PATCH 08/12] fix(discovery): hand the endpoint's servers to the
  other processes
 
 The UI and the tray run outside the host process and read their options over IPC from it, so the
@@ -63,5 +63,5 @@ index 44a1c8d51..1bfc75cd8 100644
              }
              Some(value) => {
 -- 
-2.56.0
+2.56.0.windows.2
 
